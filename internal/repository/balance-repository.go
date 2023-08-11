@@ -1,3 +1,4 @@
+// Package repository is a lower level of project
 package repository
 
 import (
@@ -5,8 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/artnikel/TradingService/internal/model"
 	bproto "github.com/artnikel/BalanceService/proto"
+	"github.com/artnikel/TradingService/internal/model"
 	"github.com/google/uuid"
 )
 
@@ -27,7 +28,7 @@ func (b *BalanceRepository) BalanceOperation(ctx context.Context, balance *model
 	resp, err := b.client.BalanceOperation(ctx, &bproto.BalanceOperationRequest{Balance: &bproto.Balance{
 		Balanceid: balance.BalanceID.String(),
 		Profileid: balance.ProfileID.String(),
-		Operation: balance.Operation,
+		Operation: balance.Operation.InexactFloat64(),
 	}})
 	if err != nil {
 		return 0, fmt.Errorf("BalanceRepository-BalanceOperation: error:%w", err)

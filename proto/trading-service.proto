@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/artnikel/TradingService/proto";
+
+message Deal {
+    string DealID = 1;
+	double ActionsCount = 2;
+	string ProfileID = 3;
+	string Company = 4;
+	double PurchasePrice = 5;
+	double StopLoss = 6;
+	double TakeProfit = 7;
+    google.protobuf.Timestamp DealTime = 8;
+    google.protobuf.Timestamp EndDealTime = 9;
+	double Profit = 10;
+}
+
+service TradingService {
+    rpc Strategies(StrategiesRequest) returns (StrategiesResponse);
+}
+
+message StrategiesRequest{
+    string strategy = 1;
+    Deal deal = 2;
+}
+
+message StrategiesResponse{
+    double Profit = 1;
+}
