@@ -41,13 +41,13 @@ func (d *EntityDeal) Strategies(ctx context.Context, req *proto.StrategiesReques
 		return &proto.StrategiesResponse{}, fmt.Errorf("EntityDeal-Strategies: failed to parse id")
 	}
 	createdDeal := &model.Deal{
-		DealID:       uuid.New(),
-		ActionsCount: decimal.NewFromFloat(req.Deal.ActionsCount),
-		ProfileID:    profileID,
-		Company:      req.Deal.Company,
-		StopLoss:     decimal.NewFromFloat(req.Deal.StopLoss),
-		TakeProfit:   decimal.NewFromFloat(req.Deal.TakeProfit),
-		DealTime:     time.Now().UTC(),
+		DealID:      uuid.New(),
+		SharesCount: decimal.NewFromFloat(req.Deal.SharesCount),
+		ProfileID:   profileID,
+		Company:     req.Deal.Company,
+		StopLoss:    decimal.NewFromFloat(req.Deal.StopLoss),
+		TakeProfit:  decimal.NewFromFloat(req.Deal.TakeProfit),
+		DealTime:    time.Now().UTC(),
 	}
 	err = d.validate.StructCtx(ctx, createdDeal)
 	if err != nil {

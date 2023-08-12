@@ -8,8 +8,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// Action is a struct for actions entity
-type Action struct {
+// Share is a struct for shares entity
+type Share struct {
 	Company string
 	Price   decimal.Decimal
 }
@@ -17,7 +17,7 @@ type Action struct {
 // Deal is a struct for creating new deals
 type Deal struct {
 	DealID        uuid.UUID
-	ActionsCount  decimal.Decimal `json:"actionscount"`
+	SharesCount   decimal.Decimal `json:"sharescount"`
 	ProfileID     uuid.UUID       `json:"profileid" validate:"required"`
 	Company       string          `json:"company" validate:"required"`
 	PurchasePrice decimal.Decimal

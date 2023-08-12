@@ -6,7 +6,7 @@ option go_package = "github.com/artnikel/TradingService/proto";
 
 message Deal {
     string DealID = 1;
-	double ActionsCount = 2;
+	double SharesCount = 2;
 	string ProfileID = 3;
 	string Company = 4;
 	double PurchasePrice = 5;

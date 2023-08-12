@@ -29,11 +29,11 @@ func (_m *PriceRepository) AddDeal(ctx context.Context, strategy string, deal *m
 }
 
 // Subscribe provides a mock function with given fields: ctx, position, subscribersActions
-func (_m *PriceRepository) Subscribe(ctx context.Context, position *model.Deal, subscribersActions chan []*model.Action) error {
+func (_m *PriceRepository) Subscribe(ctx context.Context, position *model.Deal, subscribersActions chan []*model.Share) error {
 	ret := _m.Called(ctx, position, subscribersActions)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Deal, chan []*model.Action) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Deal, chan []*model.Share) error); ok {
 		r0 = rf(ctx, position, subscribersActions)
 	} else {
 		r0 = ret.Error(0)

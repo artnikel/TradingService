@@ -21,13 +21,13 @@ var (
 	}
 	testStrategy = "short"
 	testDeal     = &model.Deal{
-		DealID:       uuid.New(),
-		ActionsCount: decimal.NewFromFloat(1.5),
-		ProfileID:    testBalance.ProfileID,
-		Company:      "Apple",
-		StopLoss:     decimal.NewFromFloat(1500),
-		TakeProfit:   decimal.NewFromFloat(1000),
-		DealTime:     time.Now().UTC(),
+		DealID:      uuid.New(),
+		SharesCount: decimal.NewFromFloat(1.5),
+		ProfileID:   testBalance.ProfileID,
+		Company:     "Apple",
+		StopLoss:    decimal.NewFromFloat(1500),
+		TakeProfit:  decimal.NewFromFloat(1000),
+		DealTime:    time.Now().UTC(),
 	}
 )
 
@@ -55,7 +55,7 @@ func TestStrategies(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	srv := NewTradingService(prep, brep)
 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
-	prep.On("Subscribe", mock.Anything, mock.AnythingOfType("*model.Deal"), mock.AnythingOfType("chan []*model.Action")).Return(nil).Once()
+	prep.On("Subscribe", mock.Anything, mock.AnythingOfType("*model.Deal"), mock.AnythingOfType("chan []*model.Share")).Return(nil).Once()
 	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	prep.On("AddDeal", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).
 		Return(nil).Once()

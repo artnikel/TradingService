@@ -1,9 +1,7 @@
-github.com/artnikel/BalanceService v0.0.0-20230808133307-22305acc1cc9 h1:P+ThAetpvJNsQyTWS6aMP/Vhj1yNuhIDMX/pvGBaLXo=
-github.com/artnikel/BalanceService v0.0.0-20230808133307-22305acc1cc9/go.mod h1:Hm20EC5ZH+a9pYr7djATdHNWsvMi+QtxQFFij2dPOGY=
 github.com/artnikel/BalanceService v0.0.0-20230811103249-6b708502953c h1:okLqsHnvZJvN4qrmqq6f1gNuOkaLNI+3i2HDpU4OV8w=
 github.com/artnikel/BalanceService v0.0.0-20230811103249-6b708502953c/go.mod h1:WpmIlQHJY5Ertr0LEJ9ZXcZeryEQvUuGNxIDAPmTR48=
-github.com/artnikel/PriceService v0.0.0-20230802190226-70778ee0be09 h1:uTpIcSuywmJXtVRXWvXIlUNEG6xQxvKbVGZwlcJ4WR0=
-github.com/artnikel/PriceService v0.0.0-20230802190226-70778ee0be09/go.mod h1:aQdwmxHA+LTfSOB/2FvVOzrvkquq3iy2FSM+sERSZYU=
+github.com/artnikel/PriceService v0.0.0-20230812130758-e5ab4a32cef0 h1:dGAnbwHg2aYo7zZJwm8X6MfDr8WD47ns2tAV2/AFz9I=
+github.com/artnikel/PriceService v0.0.0-20230812130758-e5ab4a32cef0/go.mod h1:vrflT3oTsBDf5mXrY03yYQuRRABW60Vz28/BkEWfPmQ=
 github.com/caarlos0/env v3.5.0+incompatible h1:Yy0UN8o9Wtr/jGHZDpCBLpNrzcFLLM2yixi/rBrKyJs=
 github.com/caarlos0/env v3.5.0+incompatible/go.mod h1:tdCsowwCzMLdkqRYDlHpZCp2UooDD3MspDBjZ2AD02Y=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=

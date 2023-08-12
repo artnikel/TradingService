@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/artnikel/BalanceService v0.0.0-20230811103249-6b708502953c
-	github.com/artnikel/PriceService v0.0.0-20230802190226-70778ee0be09
+	github.com/artnikel/PriceService v0.0.0-20230812130758-e5ab4a32cef0
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/shopspring/decimal v1.3.1
