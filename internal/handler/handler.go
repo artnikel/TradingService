@@ -16,7 +16,7 @@ import (
 
 // TradingService is an interface that contains methods of service for trade
 type TradingService interface {
-	Strategies(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error)
+	GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error)
 	BalanceOperation(ctx context.Context, balance *model.Balance) (float64, error)
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
 }
@@ -33,12 +33,12 @@ func NewEntityDeal(srvTrading TradingService, validate *validator.Validate) *Ent
 	return &EntityDeal{srvTrading: srvTrading, validate: validate}
 }
 
-// Strategies is method that calls method of Trading Service
-func (d *EntityDeal) Strategies(ctx context.Context, req *proto.StrategiesRequest) (*proto.StrategiesResponse, error) {
+// GetProfit is method that calls method of Trading Service
+func (d *EntityDeal) GetProfit(ctx context.Context, req *proto.GetProfitRequest) (*proto.GetProfitResponse, error) {
 	profileID, err := uuid.Parse(req.Deal.ProfileID)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.StrategiesResponse{}, fmt.Errorf("EntityDeal-Strategies: failed to parse id")
+		return &proto.GetProfitResponse{}, fmt.Errorf("EntityDeal-Strategies: failed to parse id")
 	}
 	createdDeal := &model.Deal{
 		DealID:      uuid.New(),
@@ -52,12 +52,12 @@ func (d *EntityDeal) Strategies(ctx context.Context, req *proto.StrategiesReques
 	err = d.validate.StructCtx(ctx, createdDeal)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.StrategiesResponse{}, fmt.Errorf("EntityDeal-Strategies: failed to validate struct deal")
+		return &proto.GetProfitResponse{}, fmt.Errorf("EntityDeal-Strategies: failed to validate struct deal")
 	}
-	profit, err := d.srvTrading.Strategies(ctx, req.Strategy, createdDeal)
+	profit, err := d.srvTrading.GetProfit(ctx, req.Strategy, createdDeal)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.StrategiesResponse{}, fmt.Errorf("EntityDeal-Strategies: failed run method strategies")
+		return &proto.GetProfitResponse{}, fmt.Errorf("EntityDeal-Strategies: failed run method strategies")
 	}
-	return &proto.StrategiesResponse{Profit: profit.InexactFloat64()}, nil
+	return &proto.GetProfitResponse{Profit: profit.InexactFloat64()}, nil
 }

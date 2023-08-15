@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TradingServiceClient interface {
-	Strategies(ctx context.Context, in *StrategiesRequest, opts ...grpc.CallOption) (*StrategiesResponse, error)
+	GetProfit(ctx context.Context, in *GetProfitRequest, opts ...grpc.CallOption) (*GetProfitResponse, error)
 }
 
 type tradingServiceClient struct {
@@ -29,9 +29,9 @@ func NewTradingServiceClient(cc grpc.ClientConnInterface) TradingServiceClient {
 	return &tradingServiceClient{cc}
 }
 
-func (c *tradingServiceClient) Strategies(ctx context.Context, in *StrategiesRequest, opts ...grpc.CallOption) (*StrategiesResponse, error) {
-	out := new(StrategiesResponse)
-	err := c.cc.Invoke(ctx, "/TradingService/Strategies", in, out, opts...)
+func (c *tradingServiceClient) GetProfit(ctx context.Context, in *GetProfitRequest, opts ...grpc.CallOption) (*GetProfitResponse, error) {
+	out := new(GetProfitResponse)
+	err := c.cc.Invoke(ctx, "/TradingService/GetProfit", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (c *tradingServiceClient) Strategies(ctx context.Context, in *StrategiesReq
 // All implementations must embed UnimplementedTradingServiceServer
 // for forward compatibility
 type TradingServiceServer interface {
-	Strategies(context.Context, *StrategiesRequest) (*StrategiesResponse, error)
+	GetProfit(context.Context, *GetProfitRequest) (*GetProfitResponse, error)
 	mustEmbedUnimplementedTradingServiceServer()
 }
 
@@ -50,8 +50,8 @@ type TradingServiceServer interface {
 type UnimplementedTradingServiceServer struct {
 }
 
-func (UnimplementedTradingServiceServer) Strategies(context.Context, *StrategiesRequest) (*StrategiesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Strategies not implemented")
+func (UnimplementedTradingServiceServer) GetProfit(context.Context, *GetProfitRequest) (*GetProfitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProfit not implemented")
 }
 func (UnimplementedTradingServiceServer) mustEmbedUnimplementedTradingServiceServer() {}
 
@@ -66,20 +66,20 @@ func RegisterTradingServiceServer(s grpc.ServiceRegistrar, srv TradingServiceSer
 	s.RegisterService(&TradingService_ServiceDesc, srv)
 }
 
-func _TradingService_Strategies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StrategiesRequest)
+func _TradingService_GetProfit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProfitRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingServiceServer).Strategies(ctx, in)
+		return srv.(TradingServiceServer).GetProfit(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TradingService/Strategies",
+		FullMethod: "/TradingService/GetProfit",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingServiceServer).Strategies(ctx, req.(*StrategiesRequest))
+		return srv.(TradingServiceServer).GetProfit(ctx, req.(*GetProfitRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -92,8 +92,8 @@ var TradingService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TradingServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Strategies",
-			Handler:    _TradingService_Strategies_Handler,
+			MethodName: "GetProfit",
+			Handler:    _TradingService_GetProfit_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

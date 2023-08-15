@@ -61,8 +61,8 @@ func (_m *TradingService) GetBalance(ctx context.Context, profileid uuid.UUID) (
 	return r0, r1
 }
 
-// Strategies provides a mock function with given fields: ctx, strategy, deal
-func (_m *TradingService) Strategies(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
+// GetProfit provides a mock function with given fields: ctx, strategy, deal
+func (_m *TradingService) GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
 	ret := _m.Called(ctx, strategy, deal)
 
 	var r0 decimal.Decimal

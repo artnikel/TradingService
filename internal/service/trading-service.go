@@ -36,15 +36,16 @@ func NewTradingService(priceRep PriceRepository, bRep BalanceRepository) *Tradin
 	return &TradingService{
 		priceRep: priceRep,
 		bRep:     bRep,
+		chmanager: &model.ChanManager{SubscribersShares: make(chan []*model.Share)},
 	}
 }
 
 // nolint gocognit
-// Strategies contains 2 options of strategy - long and short
-func (ts *TradingService) Strategies(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
+// GetProfit contains 2 options of strategy - long and short
+func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
 	balanceMoney, err := ts.bRep.GetBalance(ctx, deal.ProfileID)
 	if err != nil {
-		return decimal.Zero, fmt.Errorf("PriceService-Strategies-GetBalance: error:%w", err)
+		return decimal.Zero, fmt.Errorf("PriceService-GetProfit-GetBalance: error:%w", err)
 	}
 	balance := &model.Balance{
 		BalanceID: uuid.New(),
@@ -61,12 +62,15 @@ func (ts *TradingService) Strategies(ctx context.Context, strategy string, deal 
 				balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount)
 				_, err := ts.bRep.BalanceOperation(ctx, balance)
 				if err != nil {
-					log.Fatalf("PriceService-Strategies-BalanceOperation: error:%v", err)
+					log.Fatalf("PriceService-GetProfit-BalanceOperation: error:%v", err)
 				}
 			}
 		}()
 		select {
-		case actions := <-ts.chmanager.SubscribersShares:
+		case actions, ok := <-ts.chmanager.SubscribersShares:
+			if !ok {
+				return decimal.Zero, fmt.Errorf("PriceService-GetProfit: channel closed:%w", err)
+			}
 			for _, action := range actions {
 				if action.Company == deal.Company {
 					statusCmp := a.GreaterThanOrEqual(action.Price.Mul(deal.SharesCount))
@@ -76,12 +80,12 @@ func (ts *TradingService) Strategies(ctx context.Context, strategy string, deal 
 						for !isAdded {
 							err := ts.priceRep.AddDeal(ctx, strategy, deal)
 							if err != nil {
-								return decimal.Zero, fmt.Errorf("PriceService-Strategies-AddDeal: error:%w", err)
+								return decimal.Zero, fmt.Errorf("PriceService-GetProfit-AddDeal: error:%w", err)
 							}
 							balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
 							_, err = ts.bRep.BalanceOperation(ctx, balance)
 							if err != nil {
-								return decimal.Zero, fmt.Errorf("PriceService-Strategies-BalanceOperation: error:%w", err)
+								return decimal.Zero, fmt.Errorf("PriceService-GetProfit-BalanceOperation: error:%w", err)
 							}
 							isAdded = true
 							return deal.Profit, nil
@@ -94,12 +98,12 @@ func (ts *TradingService) Strategies(ctx context.Context, strategy string, deal 
 						for !isAdded {
 							err := ts.priceRep.AddDeal(ctx, strategy, deal)
 							if err != nil {
-								return decimal.Zero, fmt.Errorf("PriceService-Strategies-AddDeal: error:%w", err)
+								return decimal.Zero, fmt.Errorf("PriceService-GetProfit-AddDeal: error:%w", err)
 							}
 							balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
 							_, err = ts.bRep.BalanceOperation(ctx, balance)
 							if err != nil {
-								return decimal.Zero, fmt.Errorf("PriceService-Strategies-BalanceOperation: error:%w", err)
+								return decimal.Zero, fmt.Errorf("PriceService-GetProfit-BalanceOperation: error:%w", err)
 							}
 							isAdded = true
 							return deal.Profit, nil
@@ -110,15 +114,15 @@ func (ts *TradingService) Strategies(ctx context.Context, strategy string, deal 
 						deal.PurchasePrice = action.Price
 						taken = true
 						if a.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(b) == 1 {
-							return decimal.Zero, fmt.Errorf("PriceService-Strategies: purchase price out of takeprofit/stoploss")
+							return decimal.Zero, fmt.Errorf("PriceService-GetProfit: purchase price out of takeprofit/stoploss")
 						}
 						if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
-							return decimal.Zero, fmt.Errorf("PriceService-Strategies: not enough money")
+							return decimal.Zero, fmt.Errorf("PriceService-GetProfit: not enough money")
 						}
 						balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
 						_, err := ts.bRep.BalanceOperation(ctx, balance)
 						if err != nil {
-							return decimal.Zero, fmt.Errorf("PriceService-Strategies-BalanceOperation: error:%w", err)
+							return decimal.Zero, fmt.Errorf("PriceService-GetProfit-BalanceOperation: error:%w", err)
 						}
 					}
 				}
@@ -129,6 +133,7 @@ func (ts *TradingService) Strategies(ctx context.Context, strategy string, deal 
 	}
 }
 
+// Subscribe is a method of TradingService calls method of Repository
 func (ts *TradingService) Subscribe(ctx context.Context) {
 	manager := make(chan []*model.Share)
 	go func() {

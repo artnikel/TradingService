@@ -30,7 +30,7 @@ var (
 	}
 )
 
-func TestStrategies(t *testing.T) {
+func TestGetProfit(t *testing.T) {
 	srv := new(mocks.TradingService)
 	hndl := NewEntityDeal(srv, v)
 	protoDeal := &proto.Deal{
@@ -42,8 +42,8 @@ func TestStrategies(t *testing.T) {
 		TakeProfit:  testDeal.TakeProfit.InexactFloat64(),
 		DealTime:    timestamppb.Now(),
 	}
-	srv.On("Strategies", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(testDeal.Profit, nil).Once()
-	_, err := hndl.Strategies(context.Background(), &proto.StrategiesRequest{
+	srv.On("GetProfit", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(testDeal.Profit, nil).Once()
+	_, err := hndl.GetProfit(context.Background(), &proto.GetProfitRequest{
 		Strategy: testStrategy,
 		Deal:     protoDeal,
 	})

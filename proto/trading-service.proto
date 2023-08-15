@@ -18,14 +18,14 @@ message Deal {
 }
 
 service TradingService {
-    rpc Strategies(StrategiesRequest) returns (StrategiesResponse);
+    rpc GetProfit(GetProfitRequest) returns (GetProfitResponse);
 }
 
-message StrategiesRequest{
+message GetProfitRequest{
     string strategy = 1;
     Deal deal = 2;
 }
 
-message StrategiesResponse{
+message GetProfitResponse{
     double Profit = 1;
 }
