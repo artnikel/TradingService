@@ -14,7 +14,7 @@ import (
 
 // PriceRepository is interface with method for reading prices
 type PriceRepository interface {
-	Subscribe(ctx context.Context, position *model.Deal, subscribersActions chan []*model.Share) error
+	Subscribe(ctx context.Context, manager chan []*model.Share) error
 	AddDeal(ctx context.Context, strategy string, deal *model.Deal) error
 }
 
@@ -26,8 +26,9 @@ type BalanceRepository interface {
 
 // TradingService contains PriceRepository interface
 type TradingService struct {
-	priceRep PriceRepository
-	bRep     BalanceRepository
+	priceRep  PriceRepository
+	bRep      BalanceRepository
+	chmanager *model.ChanManager
 }
 
 // NewTradingService accepts PriceRepository object and returnes an object of type *PriceService
@@ -43,94 +44,102 @@ func NewTradingService(priceRep PriceRepository, bRep BalanceRepository) *Tradin
 func (ts *TradingService) Strategies(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
 	balanceMoney, err := ts.bRep.GetBalance(ctx, deal.ProfileID)
 	if err != nil {
-		return decimal.Zero, fmt.Errorf("TradingService-Strategies-GetBalance: error:%w", err)
+		return decimal.Zero, fmt.Errorf("PriceService-Strategies-GetBalance: error:%w", err)
 	}
 	balance := &model.Balance{
 		BalanceID: uuid.New(),
 		ProfileID: deal.ProfileID,
 	}
-	subscribersActions := make(chan []*model.Share)
-	go func() {
-		err = ts.priceRep.Subscribe(ctx, deal, subscribersActions)
-		if err != nil {
-			log.Fatalf("TradingService-Strategies-GetBalance: error:%v", err)
-		}
-	}()
 	taken, isAdded := false, false
 	a, b := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
 	if strategy == "short" {
 		a, b = b, a
 	}
-	defer func() {
-		if deal.EndDealTime.IsZero() {
-			balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount)
-			_, err := ts.bRep.BalanceOperation(ctx, balance)
-			if err != nil {
-				log.Fatalf("PriceService-Strategies-BalanceOperation: error:%v", err)
-			}
-		}
-	}()
 	for {
+		defer func() {
+			if deal.EndDealTime.IsZero() && taken {
+				balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount)
+				_, err := ts.bRep.BalanceOperation(ctx, balance)
+				if err != nil {
+					log.Fatalf("PriceService-Strategies-BalanceOperation: error:%v", err)
+				}
+			}
+		}()
 		select {
-		case actions := <-subscribersActions:
+		case actions := <-ts.chmanager.SubscribersShares:
 			for _, action := range actions {
-				statusCmp := a.GreaterThanOrEqual(action.Price.Mul(deal.SharesCount))
-				if statusCmp {
-					deal.EndDealTime = time.Now().UTC()
-					deal.Profit = a.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
-					for !isAdded {
-						err := ts.priceRep.AddDeal(ctx, strategy, deal)
-						if err != nil {
-							return decimal.Zero, fmt.Errorf("PriceService-Strategies-AddDeal: error:%w", err)
+				if action.Company == deal.Company {
+					statusCmp := a.GreaterThanOrEqual(action.Price.Mul(deal.SharesCount))
+					if statusCmp {
+						deal.EndDealTime = time.Now().UTC()
+						deal.Profit = a.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
+						for !isAdded {
+							err := ts.priceRep.AddDeal(ctx, strategy, deal)
+							if err != nil {
+								return decimal.Zero, fmt.Errorf("PriceService-Strategies-AddDeal: error:%w", err)
+							}
+							balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
+							_, err = ts.bRep.BalanceOperation(ctx, balance)
+							if err != nil {
+								return decimal.Zero, fmt.Errorf("PriceService-Strategies-BalanceOperation: error:%w", err)
+							}
+							isAdded = true
+							return deal.Profit, nil
 						}
-						balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
-						_, err = ts.bRep.BalanceOperation(ctx, balance)
+					}
+					statusCmp = action.Price.Mul(deal.SharesCount).GreaterThanOrEqual(b)
+					if statusCmp {
+						deal.EndDealTime = time.Now().UTC()
+						deal.Profit = b.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
+						for !isAdded {
+							err := ts.priceRep.AddDeal(ctx, strategy, deal)
+							if err != nil {
+								return decimal.Zero, fmt.Errorf("PriceService-Strategies-AddDeal: error:%w", err)
+							}
+							balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
+							_, err = ts.bRep.BalanceOperation(ctx, balance)
+							if err != nil {
+								return decimal.Zero, fmt.Errorf("PriceService-Strategies-BalanceOperation: error:%w", err)
+							}
+							isAdded = true
+							return deal.Profit, nil
+						}
+					}
+					for !taken {
+						deal.Company = action.Company
+						deal.PurchasePrice = action.Price
+						taken = true
+						if a.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(b) == 1 {
+							return decimal.Zero, fmt.Errorf("PriceService-Strategies: purchase price out of takeprofit/stoploss")
+						}
+						if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
+							return decimal.Zero, fmt.Errorf("PriceService-Strategies: not enough money")
+						}
+						balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
+						_, err := ts.bRep.BalanceOperation(ctx, balance)
 						if err != nil {
 							return decimal.Zero, fmt.Errorf("PriceService-Strategies-BalanceOperation: error:%w", err)
 						}
-						isAdded = true
-						return deal.Profit, nil
-					}
-				}
-				statusCmp = action.Price.Mul(deal.SharesCount).GreaterThanOrEqual(b)
-				if statusCmp {
-					deal.EndDealTime = time.Now().UTC()
-					deal.Profit = b.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
-					for !isAdded {
-						err := ts.priceRep.AddDeal(ctx, strategy, deal)
-						if err != nil {
-							return decimal.Zero, fmt.Errorf("PriceService-Strategies-AddDeal: error:%w", err)
-						}
-						balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
-						_, err = ts.bRep.BalanceOperation(ctx, balance)
-						if err != nil {
-							return decimal.Zero, fmt.Errorf("PriceService-Strategies-BalanceOperation: error:%w", err)
-						}
-
-						isAdded = true
-						return deal.Profit, nil
-					}
-				}
-				for !taken {
-					deal.Company = action.Company
-					deal.PurchasePrice = action.Price
-					taken = true
-					if a.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(b) == 1 {
-						return decimal.Zero, fmt.Errorf("PriceService-Strategies: purchase price out of takeprofit/stoploss")
-					}
-					if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
-						return decimal.Zero, fmt.Errorf("PriceService-Strategies: not enough money")
-					}
-					balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
-					_, err := ts.bRep.BalanceOperation(ctx, balance)
-					if err != nil {
-						return decimal.Zero, fmt.Errorf("PriceService-Strategies-BalanceOperation: error:%w", err)
 					}
 				}
 			}
 		case <-ctx.Done():
 			return decimal.Zero, nil
 		}
+	}
+}
+
+func (ts *TradingService) Subscribe(ctx context.Context) {
+	manager := make(chan []*model.Share)
+	go func() {
+		err := ts.priceRep.Subscribe(ctx, manager)
+		if err != nil {
+			log.Fatalf("TradingService-Subscribe: error:%v", err)
+		}
+	}()
+	defer close(manager)
+	for _, shares := range <-manager {
+		ts.chmanager.SubscribersShares <- []*model.Share{shares}
 	}
 }
 

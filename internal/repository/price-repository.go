@@ -7,6 +7,7 @@ import (
 
 	pproto "github.com/artnikel/PriceService/proto"
 	"github.com/artnikel/TradingService/internal/model"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 )
@@ -26,17 +27,14 @@ func NewPriceRepository(client pproto.PriceServiceClient, pool *pgxpool.Pool) *P
 }
 
 // Subscribe call a method of PriceService.
-func (p *PriceRepository) Subscribe(ctx context.Context, deal *model.Deal, subscribersShares chan []*model.Share) error {
-	var selectedShares []string
-	selectedShares = append(selectedShares, deal.Company)
+func (p *PriceRepository) Subscribe(ctx context.Context, manager chan []*model.Share) error {
 	stream, err := p.client.Subscribe(ctx, &pproto.SubscribeRequest{
-		Uuid:           deal.ProfileID.String(),
-		SelectedShares: selectedShares,
+		Uuid:           uuid.NewString(),
+		SelectedShares: []string{"Apple","Microsot","Xerox","Samsung","Logitech"},
 	})
 	if err != nil {
 		return fmt.Errorf("PriceRepository-Subscribe: error:%w", err)
 	}
-	defer close(subscribersShares)
 	for {
 		protoResponse, err := stream.Recv()
 		if err != nil {
@@ -55,7 +53,7 @@ func (p *PriceRepository) Subscribe(ctx context.Context, deal *model.Deal, subsc
 		select {
 		case <-ctx.Done():
 			return nil
-		case subscribersShares <- recievedShares:
+		case manager <- recievedShares:
 		}
 	}
 }

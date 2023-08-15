@@ -64,18 +64,13 @@ func main() {
 		log.Fatal("could not construct the pool: ", errPool)
 	}
 	defer dbpool.Close()
+
+	//ctx, cancel := context.WithCancel(context.Background())
 	pclient := pproto.NewPriceServiceClient(pconn)
 	bclient := bproto.NewBalanceServiceClient(bconn)
 	prep := repository.NewPriceRepository(pclient, dbpool)
 	brep := repository.NewBalanceRepository(bclient)
 	tsrv := service.NewTradingService(prep, brep)
-	// var deal model.Deal
-	// deal.Company = "Microsoft"
-	// deal.ProfileID = uuid.New()
-	// deal.StopLoss = decimal.NewFromInt(800)
-	// deal.TakeProfit = decimal.NewFromInt(950)
-	// deal.ActionsCount = decimal.NewFromInt(3)
-	// psrv.Strategies(context.Background(), "long", &deal)
 	hndl := handler.NewEntityDeal(tsrv, v)
 	lis, err := net.Listen("tcp", "localhost:8099")
 	if err != nil {
@@ -87,4 +82,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to serve listener: %s", err)
 	}
+	go tsrv.Subscribe(context.Background())
+		
 }

@@ -2,6 +2,7 @@
 package model
 
 import (
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,4 +34,9 @@ type Balance struct {
 	BalanceID uuid.UUID       `json:"balanceid" validate:"required,uuid"`                  // id of balance operation - each operation have new id
 	ProfileID uuid.UUID       `json:"profileid" validate:"required,uuid"`                  // same value as ID in struct User
 	Operation decimal.Decimal `json:"operation" validate:"required,gt=0" form:"operation"` // sum of money to be deposit or withdraw
+}
+
+type ChanManager struct {
+	SubscribersShares chan []*Share
+	Mu sync.Mutex
 }
