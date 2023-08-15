@@ -34,8 +34,8 @@ type TradingService struct {
 // NewTradingService accepts PriceRepository object and returnes an object of type *PriceService
 func NewTradingService(priceRep PriceRepository, bRep BalanceRepository) *TradingService {
 	return &TradingService{
-		priceRep: priceRep,
-		bRep:     bRep,
+		priceRep:  priceRep,
+		bRep:      bRep,
 		chmanager: &model.ChanManager{SubscribersShares: make(chan []*model.Share)},
 	}
 }
@@ -43,6 +43,8 @@ func NewTradingService(priceRep PriceRepository, bRep BalanceRepository) *Tradin
 // nolint gocognit
 // GetProfit contains 2 options of strategy - long and short
 func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
+	ts.chmanager.Mu.Lock()
+	defer ts.chmanager.Mu.Unlock()
 	balanceMoney, err := ts.bRep.GetBalance(ctx, deal.ProfileID)
 	if err != nil {
 		return decimal.Zero, fmt.Errorf("PriceService-GetProfit-GetBalance: error:%w", err)
@@ -52,31 +54,28 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 		ProfileID: deal.ProfileID,
 	}
 	taken, isAdded := false, false
-	a, b := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
+	stopLoss, takeProfit := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
 	if strategy == "short" {
-		a, b = b, a
+		stopLoss, takeProfit = takeProfit, stopLoss
 	}
+	defer func() {
+		if deal.EndDealTime.IsZero() && taken {
+			balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount)
+			_, err := ts.bRep.BalanceOperation(ctx, balance)
+			if err != nil {
+				log.Fatalf("PriceService-GetProfit-BalanceOperation: error:%v", err)
+			}
+		}
+	}()
 	for {
-		defer func() {
-			if deal.EndDealTime.IsZero() && taken {
-				balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount)
-				_, err := ts.bRep.BalanceOperation(ctx, balance)
-				if err != nil {
-					log.Fatalf("PriceService-GetProfit-BalanceOperation: error:%v", err)
-				}
-			}
-		}()
 		select {
-		case actions, ok := <-ts.chmanager.SubscribersShares:
-			if !ok {
-				return decimal.Zero, fmt.Errorf("PriceService-GetProfit: channel closed:%w", err)
-			}
-			for _, action := range actions {
-				if action.Company == deal.Company {
-					statusCmp := a.GreaterThanOrEqual(action.Price.Mul(deal.SharesCount))
-					if statusCmp {
+		case shares := <-ts.chmanager.SubscribersShares:
+			for _, share := range shares {
+				if share.Company == deal.Company {
+					statusCompare := stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount))
+					if statusCompare {
 						deal.EndDealTime = time.Now().UTC()
-						deal.Profit = a.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
+						deal.Profit = stopLoss.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
 						for !isAdded {
 							err := ts.priceRep.AddDeal(ctx, strategy, deal)
 							if err != nil {
@@ -91,10 +90,10 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 							return deal.Profit, nil
 						}
 					}
-					statusCmp = action.Price.Mul(deal.SharesCount).GreaterThanOrEqual(b)
-					if statusCmp {
+					statusCompare = share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit)
+					if statusCompare {
 						deal.EndDealTime = time.Now().UTC()
-						deal.Profit = b.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
+						deal.Profit = takeProfit.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
 						for !isAdded {
 							err := ts.priceRep.AddDeal(ctx, strategy, deal)
 							if err != nil {
@@ -110,10 +109,9 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 						}
 					}
 					for !taken {
-						deal.Company = action.Company
-						deal.PurchasePrice = action.Price
+						deal.PurchasePrice = share.Price
 						taken = true
-						if a.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(b) == 1 {
+						if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
 							return decimal.Zero, fmt.Errorf("PriceService-GetProfit: purchase price out of takeprofit/stoploss")
 						}
 						if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
@@ -133,7 +131,7 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 	}
 }
 
-// Subscribe is a method of TradingService calls method of Repository
+// Subscribe is a method of TradingService that calls method of Repository as goroutine
 func (ts *TradingService) Subscribe(ctx context.Context) {
 	manager := make(chan []*model.Share)
 	go func() {

@@ -30,7 +30,7 @@ func NewPriceRepository(client pproto.PriceServiceClient, pool *pgxpool.Pool) *P
 func (p *PriceRepository) Subscribe(ctx context.Context, manager chan []*model.Share) error {
 	stream, err := p.client.Subscribe(ctx, &pproto.SubscribeRequest{
 		Uuid:           uuid.NewString(),
-		SelectedShares: []string{"Apple","Microsot","Xerox","Samsung","Logitech"},
+		SelectedShares: []string{"Apple", "Microsoft", "Xerox", "Samsung", "Logitech"},
 	})
 	if err != nil {
 		return fmt.Errorf("PriceRepository-Subscribe: error:%w", err)
@@ -54,6 +54,7 @@ func (p *PriceRepository) Subscribe(ctx context.Context, manager chan []*model.S
 		case <-ctx.Done():
 			return nil
 		case manager <- recievedShares:
+			return fmt.Errorf("lox")
 		}
 	}
 }

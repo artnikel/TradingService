@@ -72,7 +72,7 @@ func main() {
 	brep := repository.NewBalanceRepository(bclient)
 	tsrv := service.NewTradingService(prep, brep)
 	hndl := handler.NewEntityDeal(tsrv, v)
-	lis, err := net.Listen("tcp", "localhost:8099")
+	lis, err := net.Listen("tcp", "localhost:8098")
 	if err != nil {
 		log.Fatalf("Cannot create listener: %s", err)
 	}
