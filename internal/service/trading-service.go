@@ -14,8 +14,9 @@ import (
 
 // PriceRepository is interface with method for reading prices
 type PriceRepository interface {
-	Subscribe(ctx context.Context, manager chan []*model.Share) error
-	AddDeal(ctx context.Context, strategy string, deal *model.Deal) error
+	Subscribe(ctx context.Context, manager chan model.Share) error
+	AddPosition(ctx context.Context, strategy string, deal *model.Deal) error
+	ClosePosition(ctx context.Context, deal *model.Deal) error
 }
 
 // BalanceRepository is an interface that contains methods for user manipulation
@@ -34,115 +35,117 @@ type TradingService struct {
 // NewTradingService accepts PriceRepository object and returnes an object of type *PriceService
 func NewTradingService(priceRep PriceRepository, bRep BalanceRepository) *TradingService {
 	return &TradingService{
-		priceRep:  priceRep,
-		bRep:      bRep,
-		chmanager: &model.ChanManager{SubscribersShares: make(chan []*model.Share)},
+		priceRep: priceRep,
+		bRep:     bRep,
+		chmanager: &model.ChanManager{
+			SubscribersShares: make(map[uuid.UUID]map[string]chan model.Share)},
 	}
 }
 
-// nolint gocognit
-// GetProfit contains 2 options of strategy - long and short
+// GetProfit contains 2 options of strategy - long and short. He`s added and closed position, and returns profit.
 func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
-	ts.chmanager.Mu.Lock()
-	defer ts.chmanager.Mu.Unlock()
 	balanceMoney, err := ts.bRep.GetBalance(ctx, deal.ProfileID)
 	if err != nil {
-		return decimal.Zero, fmt.Errorf("PriceService-GetProfit-GetBalance: error:%w", err)
+		return decimal.Zero, fmt.Errorf("TradingService-GetProfit-GetBalance: error:%w", err)
 	}
-	balance := &model.Balance{
-		BalanceID: uuid.New(),
-		ProfileID: deal.ProfileID,
-	}
-	taken, isAdded := false, false
+	balance := &model.Balance{ProfileID: deal.ProfileID}
+	takenPurchasePrice, positionClosed := false, false
 	stopLoss, takeProfit := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
 	if strategy == "short" {
 		stopLoss, takeProfit = takeProfit, stopLoss
 	}
 	defer func() {
-		if deal.EndDealTime.IsZero() && taken {
+		if deal.EndDealTime.IsZero() && takenPurchasePrice {
 			balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount)
 			_, err := ts.bRep.BalanceOperation(ctx, balance)
 			if err != nil {
-				log.Fatalf("PriceService-GetProfit-BalanceOperation: error:%v", err)
+				log.Fatalf("TradingService-GetProfit-BalanceOperation: error:%v", err)
 			}
 		}
 	}()
-	for {
-		select {
-		case shares := <-ts.chmanager.SubscribersShares:
-			for _, share := range shares {
-				if share.Company == deal.Company {
-					statusCompare := stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount))
-					if statusCompare {
-						deal.EndDealTime = time.Now().UTC()
-						deal.Profit = stopLoss.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
-						for !isAdded {
-							err := ts.priceRep.AddDeal(ctx, strategy, deal)
-							if err != nil {
-								return decimal.Zero, fmt.Errorf("PriceService-GetProfit-AddDeal: error:%w", err)
-							}
-							balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
-							_, err = ts.bRep.BalanceOperation(ctx, balance)
-							if err != nil {
-								return decimal.Zero, fmt.Errorf("PriceService-GetProfit-BalanceOperation: error:%w", err)
-							}
-							isAdded = true
-							return deal.Profit, nil
-						}
-					}
-					statusCompare = share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit)
-					if statusCompare {
-						deal.EndDealTime = time.Now().UTC()
-						deal.Profit = takeProfit.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
-						for !isAdded {
-							err := ts.priceRep.AddDeal(ctx, strategy, deal)
-							if err != nil {
-								return decimal.Zero, fmt.Errorf("PriceService-GetProfit-AddDeal: error:%w", err)
-							}
-							balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
-							_, err = ts.bRep.BalanceOperation(ctx, balance)
-							if err != nil {
-								return decimal.Zero, fmt.Errorf("PriceService-GetProfit-BalanceOperation: error:%w", err)
-							}
-							isAdded = true
-							return deal.Profit, nil
-						}
-					}
-					for !taken {
-						deal.PurchasePrice = share.Price
-						taken = true
-						if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
-							return decimal.Zero, fmt.Errorf("PriceService-GetProfit: purchase price out of takeprofit/stoploss")
-						}
-						if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
-							return decimal.Zero, fmt.Errorf("PriceService-GetProfit: not enough money")
-						}
-						balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
-						_, err := ts.bRep.BalanceOperation(ctx, balance)
-						if err != nil {
-							return decimal.Zero, fmt.Errorf("PriceService-GetProfit-BalanceOperation: error:%w", err)
-						}
-					}
-				}
+	select {
+	case share := <-ts.chmanager.SubscribersShares[deal.ProfileID][deal.Company]:
+		statusCompare := stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount))
+		if statusCompare {
+			deal.Profit = stopLoss.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
+			profit, err := ts.ClosePosition(ctx, &positionClosed, deal, balance)
+			if err != nil {
+				return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
 			}
-		case <-ctx.Done():
-			return decimal.Zero, nil
+			return profit, nil
 		}
+		statusCompare = share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit)
+		if statusCompare {
+			deal.Profit = takeProfit.Sub(deal.PurchasePrice.Mul(deal.SharesCount))
+			profit, err := ts.ClosePosition(ctx, &positionClosed, deal, balance)
+			if err != nil {
+				return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
+			}
+			return profit, nil
+		}
+		for !takenPurchasePrice {
+			takenPurchasePrice = true
+			deal.PurchasePrice = share.Price
+			if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
+				return decimal.Zero, fmt.Errorf("TradingService-GetProfit: purchase price out of takeprofit/stoploss")
+			}
+			if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
+				return decimal.Zero, fmt.Errorf("TradingService-GetProfit: not enough money")
+			}
+			err := ts.priceRep.AddPosition(ctx, strategy, deal)
+			if err != nil {
+				return decimal.Zero, fmt.Errorf("TradingService-GetProfit-AddPosition: error:%w", err)
+			}
+			balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
+			_, err = ts.bRep.BalanceOperation(ctx, balance)
+			if err != nil {
+				return decimal.Zero, fmt.Errorf("TradingService-GetProfit-BalanceOperation: error:%w", err)
+			}
+		}
+	case <-ctx.Done():
+		return decimal.Zero, nil
 	}
+	return decimal.Zero, nil
+}
+
+// ClosePosition is a method that calls method of Repository and returns profit
+func (ts *TradingService) ClosePosition(ctx context.Context, positionClosed *bool, deal *model.Deal, balance *model.Balance) (decimal.Decimal, error) {
+	if !*positionClosed {
+		deal.EndDealTime = time.Now().UTC()
+		err := ts.priceRep.ClosePosition(ctx, deal)
+		if err != nil {
+			return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
+		}
+		balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
+		_, err = ts.bRep.BalanceOperation(ctx, balance)
+		if err != nil {
+			return decimal.Zero, fmt.Errorf("TradingService-GetProfit-BalanceOperation: error:%w", err)
+		}
+		*positionClosed = true
+		return deal.Profit, nil
+	}
+	return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: position is closed")
 }
 
 // Subscribe is a method of TradingService that calls method of Repository as goroutine
 func (ts *TradingService) Subscribe(ctx context.Context) {
-	manager := make(chan []*model.Share)
+	manager := make(chan model.Share, 5)
 	go func() {
 		err := ts.priceRep.Subscribe(ctx, manager)
 		if err != nil {
 			log.Fatalf("TradingService-Subscribe: error:%v", err)
 		}
 	}()
-	defer close(manager)
-	for _, shares := range <-manager {
-		ts.chmanager.SubscribersShares <- []*model.Share{shares}
+	for {
+		for subID := range ts.chmanager.SubscribersShares {
+			for share := range manager {
+				select {
+				case <-ctx.Done():
+					return
+				case ts.chmanager.SubscribersShares[subID][share.Company] <- share:
+				}
+			}
+		}
 	}
 }
 

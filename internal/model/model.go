@@ -36,7 +36,8 @@ type Balance struct {
 	Operation decimal.Decimal `json:"operation" validate:"required,gt=0" form:"operation"` // sum of money to be deposit or withdraw
 }
 
+// ChanManager contains custom map to work with shares of subscribers
 type ChanManager struct {
-	SubscribersShares chan []*Share
-	Mu sync.Mutex
+	SubscribersShares map[uuid.UUID]map[string]chan Share
+	Mu                sync.RWMutex
 }

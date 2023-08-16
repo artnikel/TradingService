@@ -65,7 +65,6 @@ func main() {
 	}
 	defer dbpool.Close()
 
-	//ctx, cancel := context.WithCancel(context.Background())
 	pclient := pproto.NewPriceServiceClient(pconn)
 	bclient := bproto.NewBalanceServiceClient(bconn)
 	prep := repository.NewPriceRepository(pclient, dbpool)
