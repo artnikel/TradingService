@@ -19,6 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TradingServiceClient interface {
 	GetProfit(ctx context.Context, in *GetProfitRequest, opts ...grpc.CallOption) (*GetProfitResponse, error)
+	ClosePosition(ctx context.Context, in *ClosePositionRequest, opts ...grpc.CallOption) (*ClosePositionResponse, error)
+	GetUnclosedPositions(ctx context.Context, in *GetUnclosedPositionsRequest, opts ...grpc.CallOption) (*GetUnclosedPositionsResponse, error)
 }
 
 type tradingServiceClient struct {
@@ -38,11 +40,31 @@ func (c *tradingServiceClient) GetProfit(ctx context.Context, in *GetProfitReque
 	return out, nil
 }
 
+func (c *tradingServiceClient) ClosePosition(ctx context.Context, in *ClosePositionRequest, opts ...grpc.CallOption) (*ClosePositionResponse, error) {
+	out := new(ClosePositionResponse)
+	err := c.cc.Invoke(ctx, "/TradingService/ClosePosition", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingServiceClient) GetUnclosedPositions(ctx context.Context, in *GetUnclosedPositionsRequest, opts ...grpc.CallOption) (*GetUnclosedPositionsResponse, error) {
+	out := new(GetUnclosedPositionsResponse)
+	err := c.cc.Invoke(ctx, "/TradingService/GetUnclosedPositions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradingServiceServer is the server API for TradingService service.
 // All implementations must embed UnimplementedTradingServiceServer
 // for forward compatibility
 type TradingServiceServer interface {
 	GetProfit(context.Context, *GetProfitRequest) (*GetProfitResponse, error)
+	ClosePosition(context.Context, *ClosePositionRequest) (*ClosePositionResponse, error)
+	GetUnclosedPositions(context.Context, *GetUnclosedPositionsRequest) (*GetUnclosedPositionsResponse, error)
 	mustEmbedUnimplementedTradingServiceServer()
 }
 
@@ -52,6 +74,12 @@ type UnimplementedTradingServiceServer struct {
 
 func (UnimplementedTradingServiceServer) GetProfit(context.Context, *GetProfitRequest) (*GetProfitResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProfit not implemented")
+}
+func (UnimplementedTradingServiceServer) ClosePosition(context.Context, *ClosePositionRequest) (*ClosePositionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClosePosition not implemented")
+}
+func (UnimplementedTradingServiceServer) GetUnclosedPositions(context.Context, *GetUnclosedPositionsRequest) (*GetUnclosedPositionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUnclosedPositions not implemented")
 }
 func (UnimplementedTradingServiceServer) mustEmbedUnimplementedTradingServiceServer() {}
 
@@ -84,6 +112,42 @@ func _TradingService_GetProfit_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingService_ClosePosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClosePositionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingServiceServer).ClosePosition(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/TradingService/ClosePosition",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingServiceServer).ClosePosition(ctx, req.(*ClosePositionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingService_GetUnclosedPositions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUnclosedPositionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingServiceServer).GetUnclosedPositions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/TradingService/GetUnclosedPositions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingServiceServer).GetUnclosedPositions(ctx, req.(*GetUnclosedPositionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TradingService_ServiceDesc is the grpc.ServiceDesc for TradingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -94,6 +158,14 @@ var TradingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProfit",
 			Handler:    _TradingService_GetProfit_Handler,
+		},
+		{
+			MethodName: "ClosePosition",
+			Handler:    _TradingService_ClosePosition_Handler,
+		},
+		{
+			MethodName: "GetUnclosedPositions",
+			Handler:    _TradingService_GetUnclosedPositions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

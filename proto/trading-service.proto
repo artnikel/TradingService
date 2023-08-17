@@ -17,8 +17,16 @@ message Deal {
 	double Profit = 10;
 }
 
+message Balance {
+    string BalanceID = 1;
+    string ProfileID = 2;
+    double Operation = 3;
+}
+
 service TradingService {
     rpc GetProfit(GetProfitRequest) returns (GetProfitResponse);
+    rpc ClosePosition(ClosePositionRequest) returns (ClosePositionResponse);
+    rpc GetUnclosedPositions(GetUnclosedPositionsRequest) returns (GetUnclosedPositionsResponse);
 }
 
 message GetProfitRequest{
@@ -28,4 +36,19 @@ message GetProfitRequest{
 
 message GetProfitResponse{
     double Profit = 1;
+}
+
+message ClosePositionRequest{
+    Deal deal = 1;
+    Balance balance = 2;
+}
+
+message ClosePositionResponse{}
+
+message GetUnclosedPositionsRequest{
+    string profileid = 1;
+}
+
+message GetUnclosedPositionsResponse{
+    repeated Deal deal = 1;
 }

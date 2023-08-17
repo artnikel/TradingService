@@ -5,4 +5,5 @@ package config
 type Variables struct {
 	TokenSignature      string `env:"TOKEN_SIGNATURE"`
 	PostgresConnTrading string `env:"POSTGRES_CONN_TRADING"`
+	CompanyShares       string `env:"COMPANY_SHARES"`
 }

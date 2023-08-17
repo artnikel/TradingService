@@ -40,6 +40,20 @@ func (_m *TradingService) BalanceOperation(ctx context.Context, balance *model.B
 	return r0, r1
 }
 
+// ClosePosition provides a mock function with given fields: ctx, deal, balance
+func (_m *TradingService) ClosePosition(ctx context.Context, deal *model.Deal, balance *model.Balance) error {
+	ret := _m.Called(ctx, deal, balance)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Deal, *model.Balance) error); ok {
+		r0 = rf(ctx, deal, balance)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetBalance provides a mock function with given fields: ctx, profileid
 func (_m *TradingService) GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error) {
 	ret := _m.Called(ctx, profileid)
@@ -75,6 +89,29 @@ func (_m *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Deal) error); ok {
 		r1 = rf(ctx, strategy, deal)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetUnclosedPositions provides a mock function with given fields: ctx, profileid
+func (_m *TradingService) GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
+	ret := _m.Called(ctx, profileid)
+
+	var r0 []*model.Deal
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.Deal); ok {
+		r0 = rf(ctx, profileid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Deal)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, profileid)
 	} else {
 		r1 = ret.Error(1)
 	}

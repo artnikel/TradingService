@@ -64,12 +64,12 @@ func main() {
 		log.Fatal("could not construct the pool: ", errPool)
 	}
 	defer dbpool.Close()
-
 	pclient := pproto.NewPriceServiceClient(pconn)
 	bclient := bproto.NewBalanceServiceClient(bconn)
 	prep := repository.NewPriceRepository(pclient, dbpool)
 	brep := repository.NewBalanceRepository(bclient)
 	tsrv := service.NewTradingService(prep, brep)
+	go tsrv.Subscribe(context.Background())
 	hndl := handler.NewEntityDeal(tsrv, v)
 	lis, err := net.Listen("tcp", "localhost:8098")
 	if err != nil {
@@ -81,6 +81,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to serve listener: %s", err)
 	}
-	go tsrv.Subscribe(context.Background())
 		
 }

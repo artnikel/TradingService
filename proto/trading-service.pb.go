@@ -140,6 +140,69 @@ func (x *Deal) GetProfit() float64 {
 	return 0
 }
 
+type Balance struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BalanceID string  `protobuf:"bytes,1,opt,name=BalanceID,proto3" json:"BalanceID,omitempty"`
+	ProfileID string  `protobuf:"bytes,2,opt,name=ProfileID,proto3" json:"ProfileID,omitempty"`
+	Operation float64 `protobuf:"fixed64,3,opt,name=Operation,proto3" json:"Operation,omitempty"`
+}
+
+func (x *Balance) Reset() {
+	*x = Balance{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_trading_service_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Balance) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Balance) ProtoMessage() {}
+
+func (x *Balance) ProtoReflect() protoreflect.Message {
+	mi := &file_trading_service_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Balance.ProtoReflect.Descriptor instead.
+func (*Balance) Descriptor() ([]byte, []int) {
+	return file_trading_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Balance) GetBalanceID() string {
+	if x != nil {
+		return x.BalanceID
+	}
+	return ""
+}
+
+func (x *Balance) GetProfileID() string {
+	if x != nil {
+		return x.ProfileID
+	}
+	return ""
+}
+
+func (x *Balance) GetOperation() float64 {
+	if x != nil {
+		return x.Operation
+	}
+	return 0
+}
+
 type GetProfitRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -152,7 +215,7 @@ type GetProfitRequest struct {
 func (x *GetProfitRequest) Reset() {
 	*x = GetProfitRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_trading_service_proto_msgTypes[1]
+		mi := &file_trading_service_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -165,7 +228,7 @@ func (x *GetProfitRequest) String() string {
 func (*GetProfitRequest) ProtoMessage() {}
 
 func (x *GetProfitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trading_service_proto_msgTypes[1]
+	mi := &file_trading_service_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -178,7 +241,7 @@ func (x *GetProfitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfitRequest.ProtoReflect.Descriptor instead.
 func (*GetProfitRequest) Descriptor() ([]byte, []int) {
-	return file_trading_service_proto_rawDescGZIP(), []int{1}
+	return file_trading_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetProfitRequest) GetStrategy() string {
@@ -206,7 +269,7 @@ type GetProfitResponse struct {
 func (x *GetProfitResponse) Reset() {
 	*x = GetProfitResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_trading_service_proto_msgTypes[2]
+		mi := &file_trading_service_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -219,7 +282,7 @@ func (x *GetProfitResponse) String() string {
 func (*GetProfitResponse) ProtoMessage() {}
 
 func (x *GetProfitResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trading_service_proto_msgTypes[2]
+	mi := &file_trading_service_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -232,7 +295,7 @@ func (x *GetProfitResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfitResponse.ProtoReflect.Descriptor instead.
 func (*GetProfitResponse) Descriptor() ([]byte, []int) {
-	return file_trading_service_proto_rawDescGZIP(), []int{2}
+	return file_trading_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetProfitResponse) GetProfit() float64 {
@@ -240,6 +303,193 @@ func (x *GetProfitResponse) GetProfit() float64 {
 		return x.Profit
 	}
 	return 0
+}
+
+type ClosePositionRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Deal    *Deal    `protobuf:"bytes,1,opt,name=deal,proto3" json:"deal,omitempty"`
+	Balance *Balance `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
+}
+
+func (x *ClosePositionRequest) Reset() {
+	*x = ClosePositionRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_trading_service_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ClosePositionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClosePositionRequest) ProtoMessage() {}
+
+func (x *ClosePositionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_trading_service_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClosePositionRequest.ProtoReflect.Descriptor instead.
+func (*ClosePositionRequest) Descriptor() ([]byte, []int) {
+	return file_trading_service_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ClosePositionRequest) GetDeal() *Deal {
+	if x != nil {
+		return x.Deal
+	}
+	return nil
+}
+
+func (x *ClosePositionRequest) GetBalance() *Balance {
+	if x != nil {
+		return x.Balance
+	}
+	return nil
+}
+
+type ClosePositionResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ClosePositionResponse) Reset() {
+	*x = ClosePositionResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_trading_service_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ClosePositionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClosePositionResponse) ProtoMessage() {}
+
+func (x *ClosePositionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_trading_service_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClosePositionResponse.ProtoReflect.Descriptor instead.
+func (*ClosePositionResponse) Descriptor() ([]byte, []int) {
+	return file_trading_service_proto_rawDescGZIP(), []int{5}
+}
+
+type GetUnclosedPositionsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Profileid string `protobuf:"bytes,1,opt,name=profileid,proto3" json:"profileid,omitempty"`
+}
+
+func (x *GetUnclosedPositionsRequest) Reset() {
+	*x = GetUnclosedPositionsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_trading_service_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetUnclosedPositionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUnclosedPositionsRequest) ProtoMessage() {}
+
+func (x *GetUnclosedPositionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_trading_service_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUnclosedPositionsRequest.ProtoReflect.Descriptor instead.
+func (*GetUnclosedPositionsRequest) Descriptor() ([]byte, []int) {
+	return file_trading_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetUnclosedPositionsRequest) GetProfileid() string {
+	if x != nil {
+		return x.Profileid
+	}
+	return ""
+}
+
+type GetUnclosedPositionsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Deal []*Deal `protobuf:"bytes,1,rep,name=deal,proto3" json:"deal,omitempty"`
+}
+
+func (x *GetUnclosedPositionsResponse) Reset() {
+	*x = GetUnclosedPositionsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_trading_service_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetUnclosedPositionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUnclosedPositionsResponse) ProtoMessage() {}
+
+func (x *GetUnclosedPositionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_trading_service_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUnclosedPositionsResponse.ProtoReflect.Descriptor instead.
+func (*GetUnclosedPositionsResponse) Descriptor() ([]byte, []int) {
+	return file_trading_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetUnclosedPositionsResponse) GetDeal() []*Deal {
+	if x != nil {
+		return x.Deal
+	}
+	return nil
 }
 
 var File_trading_service_proto protoreflect.FileDescriptor
@@ -271,22 +521,52 @@ var file_trading_service_proto_rawDesc = []byte{
 	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0b,
 	0x45, 0x6e, 0x64, 0x44, 0x65, 0x61, 0x6c, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x50,
 	0x72, 0x6f, 0x66, 0x69, 0x74, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x50, 0x72, 0x6f,
-	0x66, 0x69, 0x74, 0x22, 0x49, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1a, 0x0a, 0x08, 0x73, 0x74, 0x72, 0x61, 0x74,
-	0x65, 0x67, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x73, 0x74, 0x72, 0x61, 0x74,
-	0x65, 0x67, 0x79, 0x12, 0x19, 0x0a, 0x04, 0x64, 0x65, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x05, 0x2e, 0x44, 0x65, 0x61, 0x6c, 0x52, 0x04, 0x64, 0x65, 0x61, 0x6c, 0x22, 0x2b,
-	0x0a, 0x11, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x01, 0x52, 0x06, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x32, 0x44, 0x0a, 0x0e, 0x54,
-	0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x32, 0x0a,
-	0x09, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x12, 0x11, 0x2e, 0x47, 0x65, 0x74,
-	0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e,
-	0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-	0x61, 0x72, 0x74, 0x6e, 0x69, 0x6b, 0x65, 0x6c, 0x2f, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x66, 0x69, 0x74, 0x22, 0x63, 0x0a, 0x07, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x1c,
+	0x0a, 0x09, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x09, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x44, 0x12, 0x1c, 0x0a, 0x09,
+	0x50, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x09, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x49, 0x44, 0x12, 0x1c, 0x0a, 0x09, 0x4f, 0x70,
+	0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x09, 0x4f,
+	0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x49, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x50,
+	0x72, 0x6f, 0x66, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1a, 0x0a, 0x08,
+	0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
+	0x73, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x79, 0x12, 0x19, 0x0a, 0x04, 0x64, 0x65, 0x61, 0x6c,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x05, 0x2e, 0x44, 0x65, 0x61, 0x6c, 0x52, 0x04, 0x64,
+	0x65, 0x61, 0x6c, 0x22, 0x2b, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x50, 0x72, 0x6f, 0x66,
+	0x69, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74,
+	0x22, 0x55, 0x0a, 0x14, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f,
+	0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x04, 0x64, 0x65, 0x61, 0x6c,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x05, 0x2e, 0x44, 0x65, 0x61, 0x6c, 0x52, 0x04, 0x64,
+	0x65, 0x61, 0x6c, 0x12, 0x22, 0x0a, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x08, 0x2e, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x07,
+	0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x22, 0x17, 0x0a, 0x15, 0x43, 0x6c, 0x6f, 0x73, 0x65,
+	0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x3b, 0x0a, 0x1b, 0x47, 0x65, 0x74, 0x55, 0x6e, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50,
+	0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x1c, 0x0a, 0x09, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x69, 0x64, 0x22, 0x39, 0x0a,
+	0x1c, 0x47, 0x65, 0x74, 0x55, 0x6e, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f, 0x73, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x19, 0x0a,
+	0x04, 0x64, 0x65, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x05, 0x2e, 0x44, 0x65,
+	0x61, 0x6c, 0x52, 0x04, 0x64, 0x65, 0x61, 0x6c, 0x32, 0xd9, 0x01, 0x0a, 0x0e, 0x54, 0x72, 0x61,
+	0x64, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x32, 0x0a, 0x09, 0x47,
+	0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x12, 0x11, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72,
+	0x6f, 0x66, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x47, 0x65,
+	0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x3e, 0x0a, 0x0d, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e,
+	0x12, 0x15, 0x2e, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x50,
+	0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x53, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x55, 0x6e, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f,
+	0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x1c, 0x2e, 0x47, 0x65, 0x74, 0x55, 0x6e, 0x63,
+	0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x47, 0x65, 0x74, 0x55, 0x6e, 0x63, 0x6c, 0x6f,
+	0x73, 0x65, 0x64, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x74, 0x6e, 0x69, 0x6b, 0x65, 0x6c, 0x2f, 0x54, 0x72, 0x61, 0x64,
+	0x69, 0x6e, 0x67, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -301,24 +581,36 @@ func file_trading_service_proto_rawDescGZIP() []byte {
 	return file_trading_service_proto_rawDescData
 }
 
-var file_trading_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_trading_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_trading_service_proto_goTypes = []interface{}{
-	(*Deal)(nil),                  // 0: Deal
-	(*GetProfitRequest)(nil),      // 1: GetProfitRequest
-	(*GetProfitResponse)(nil),     // 2: GetProfitResponse
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*Deal)(nil),                         // 0: Deal
+	(*Balance)(nil),                      // 1: Balance
+	(*GetProfitRequest)(nil),             // 2: GetProfitRequest
+	(*GetProfitResponse)(nil),            // 3: GetProfitResponse
+	(*ClosePositionRequest)(nil),         // 4: ClosePositionRequest
+	(*ClosePositionResponse)(nil),        // 5: ClosePositionResponse
+	(*GetUnclosedPositionsRequest)(nil),  // 6: GetUnclosedPositionsRequest
+	(*GetUnclosedPositionsResponse)(nil), // 7: GetUnclosedPositionsResponse
+	(*timestamppb.Timestamp)(nil),        // 8: google.protobuf.Timestamp
 }
 var file_trading_service_proto_depIdxs = []int32{
-	3, // 0: Deal.DealTime:type_name -> google.protobuf.Timestamp
-	3, // 1: Deal.EndDealTime:type_name -> google.protobuf.Timestamp
+	8, // 0: Deal.DealTime:type_name -> google.protobuf.Timestamp
+	8, // 1: Deal.EndDealTime:type_name -> google.protobuf.Timestamp
 	0, // 2: GetProfitRequest.deal:type_name -> Deal
-	1, // 3: TradingService.GetProfit:input_type -> GetProfitRequest
-	2, // 4: TradingService.GetProfit:output_type -> GetProfitResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0, // 3: ClosePositionRequest.deal:type_name -> Deal
+	1, // 4: ClosePositionRequest.balance:type_name -> Balance
+	0, // 5: GetUnclosedPositionsResponse.deal:type_name -> Deal
+	2, // 6: TradingService.GetProfit:input_type -> GetProfitRequest
+	4, // 7: TradingService.ClosePosition:input_type -> ClosePositionRequest
+	6, // 8: TradingService.GetUnclosedPositions:input_type -> GetUnclosedPositionsRequest
+	3, // 9: TradingService.GetProfit:output_type -> GetProfitResponse
+	5, // 10: TradingService.ClosePosition:output_type -> ClosePositionResponse
+	7, // 11: TradingService.GetUnclosedPositions:output_type -> GetUnclosedPositionsResponse
+	9, // [9:12] is the sub-list for method output_type
+	6, // [6:9] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_trading_service_proto_init() }
@@ -340,7 +632,7 @@ func file_trading_service_proto_init() {
 			}
 		}
 		file_trading_service_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetProfitRequest); i {
+			switch v := v.(*Balance); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -352,7 +644,67 @@ func file_trading_service_proto_init() {
 			}
 		}
 		file_trading_service_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetProfitRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_trading_service_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetProfitResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_trading_service_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ClosePositionRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_trading_service_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ClosePositionResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_trading_service_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetUnclosedPositionsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_trading_service_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetUnclosedPositionsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -370,7 +722,7 @@ func file_trading_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_trading_service_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
