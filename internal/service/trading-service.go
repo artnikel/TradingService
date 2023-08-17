@@ -119,6 +119,7 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 
 // ClosePosition is a method that calls method of Repository and returns profit
 func (ts *TradingService) ClosePosition(ctx context.Context, deal *model.Deal, balance *model.Balance) error {
+	balance.ProfileID = deal.ProfileID
 	deal.EndDealTime = time.Now().UTC()
 	err := ts.priceRep.ClosePosition(ctx, deal)
 	if err != nil {

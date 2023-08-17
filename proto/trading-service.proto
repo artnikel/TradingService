@@ -17,7 +17,7 @@ message Deal {
 	double Profit = 10;
 }
 
-message Balance {
+message TradingBalance {
     string BalanceID = 1;
     string ProfileID = 2;
     double Operation = 3;
@@ -40,7 +40,7 @@ message GetProfitResponse{
 
 message ClosePositionRequest{
     Deal deal = 1;
-    Balance balance = 2;
+    TradingBalance balance = 2;
 }
 
 message ClosePositionResponse{}
