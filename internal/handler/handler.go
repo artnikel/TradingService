@@ -20,7 +20,7 @@ type TradingService interface {
 	GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error)
 	BalanceOperation(ctx context.Context, balance *model.Balance) (float64, error)
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
-	ClosePosition(ctx context.Context, deal *model.Deal, balance *model.Balance) error
+	ClosePosition(ctx context.Context, strategy string, share model.Share, deal *model.Deal, balance *model.Balance) error
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
 }
 
@@ -72,7 +72,7 @@ func (d *EntityDeal) ClosePosition(ctx context.Context, req *proto.ClosePosition
 		logrus.Errorf("error: %v", err)
 		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to parse id")
 	}
-	err = d.validate.VarCtx(ctx,dealID,"required")
+	err = d.validate.VarCtx(ctx, dealID, "required")
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to validate deal id")
@@ -80,7 +80,7 @@ func (d *EntityDeal) ClosePosition(ctx context.Context, req *proto.ClosePosition
 	dealToClose := &model.Deal{
 		DealID: dealID,
 	}
-	err = d.srvTrading.ClosePosition(ctx, dealToClose,&model.Balance{})
+	err = d.srvTrading.ClosePosition(ctx, req.Strategy, model.Share{}, dealToClose, &model.Balance{})
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed run close position")
@@ -88,13 +88,13 @@ func (d *EntityDeal) ClosePosition(ctx context.Context, req *proto.ClosePosition
 	return &proto.ClosePositionResponse{}, nil
 }
 
-func(d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUnclosedPositionsRequest) (*proto.GetUnclosedPositionsResponse, error) {
+func (d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUnclosedPositionsRequest) (*proto.GetUnclosedPositionsResponse, error) {
 	profileID, err := uuid.Parse(req.Profileid)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.GetUnclosedPositionsResponse{}, fmt.Errorf("EntityDeal-GetUnclosedPositions: failed to parse profile id")
 	}
-	err = d.validate.VarCtx(ctx,profileID,"required")
+	err = d.validate.VarCtx(ctx, profileID, "required")
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.GetUnclosedPositionsResponse{}, fmt.Errorf("EntityDeal-GetUnclosedPositions: failed to validate profile id")
@@ -107,13 +107,13 @@ func(d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUncl
 	protoDeals := make([]*proto.Deal, len(unclosedDeals))
 	for i, deal := range unclosedDeals {
 		protoDeal := &proto.Deal{
-			DealID: deal.DealID.String(),
-			SharesCount: deal.SharesCount.InexactFloat64(),
-			Company: deal.Company,
+			DealID:        deal.DealID.String(),
+			SharesCount:   deal.SharesCount.InexactFloat64(),
+			Company:       deal.Company,
 			PurchasePrice: deal.PurchasePrice.InexactFloat64(),
-			StopLoss: deal.StopLoss.InexactFloat64(),
-			TakeProfit: deal.TakeProfit.InexactFloat64(),
-			DealTime: timestamppb.New(deal.DealTime),
+			StopLoss:      deal.StopLoss.InexactFloat64(),
+			TakeProfit:    deal.TakeProfit.InexactFloat64(),
+			DealTime:      timestamppb.New(deal.DealTime),
 		}
 		protoDeals[i] = protoDeal
 	}

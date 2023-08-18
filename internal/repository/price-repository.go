@@ -90,7 +90,7 @@ func (p *PriceRepository) ClosePosition(ctx context.Context, deal *model.Deal) e
 
 func (p *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
 	var deals []*model.Deal
-	rows, err := p.pool.Query(ctx, `SELECT (dealid, company, purchaseprice, sharescount, takeprofit, stoploss, dealtime)
+	rows, err := p.pool.Query(ctx, `SELECT dealid, company, purchaseprice, sharescount, takeprofit, stoploss, dealtime
 	FROM deal WHERE profileid = $1 AND enddealtime IS NULL`, profileid)
 	if err != nil {
 		return nil, fmt.Errorf("PriceRepository-GetUnclosedPositions: error in method p.pool.Query(): %w", err)

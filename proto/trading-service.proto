@@ -23,6 +23,11 @@ message TradingBalance {
     double Operation = 3;
 }
 
+message TradingShare {
+    string Company = 1;
+    double Price = 2;
+}
+
 service TradingService {
     rpc GetProfit(GetProfitRequest) returns (GetProfitResponse);
     rpc ClosePosition(ClosePositionRequest) returns (ClosePositionResponse);
@@ -39,8 +44,10 @@ message GetProfitResponse{
 }
 
 message ClosePositionRequest{
-    Deal deal = 1;
-    TradingBalance balance = 2;
+    string strategy = 1;
+    TradingShare share = 2;
+    Deal deal = 3;
+    TradingBalance balance = 4;
 }
 
 message ClosePositionResponse{}

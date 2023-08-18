@@ -40,13 +40,13 @@ func (_m *TradingService) BalanceOperation(ctx context.Context, balance *model.B
 	return r0, r1
 }
 
-// ClosePosition provides a mock function with given fields: ctx, deal, balance
-func (_m *TradingService) ClosePosition(ctx context.Context, deal *model.Deal, balance *model.Balance) error {
-	ret := _m.Called(ctx, deal, balance)
+// ClosePosition provides a mock function with given fields: ctx, strategy, share, deal, balance
+func (_m *TradingService) ClosePosition(ctx context.Context, strategy string, share model.Share, deal *model.Deal, balance *model.Balance) error {
+	ret := _m.Called(ctx, strategy, share, deal, balance)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Deal, *model.Balance) error); ok {
-		r0 = rf(ctx, deal, balance)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.Share, *model.Deal, *model.Balance) error); ok {
+		r0 = rf(ctx, strategy, share, deal, balance)
 	} else {
 		r0 = ret.Error(0)
 	}
