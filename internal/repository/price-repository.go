@@ -88,6 +88,16 @@ func (p *PriceRepository) ClosePosition(ctx context.Context, deal *model.Deal) e
 	return nil
 }
 
+func (p *PriceRepository) GetPositionInfoByDealID(ctx context.Context, dealid uuid.UUID) (*model.Deal, error) {
+	var deal *model.Deal
+	err := p.pool.QueryRow(ctx, "SELECT company, purchaseprice, sharescount, stoploss, takeprofit FROM deal WHERE dealid = $1", dealid).
+		Scan(&deal.Company, &deal.PurchasePrice, &deal.SharesCount, &deal.StopLoss, &deal.TakeProfit)
+	if err != nil {
+		return nil, fmt.Errorf("PriceRepository-GetPositionInfoByDealID: error in method p.pool.QuerryRow(): %w", err)
+	}
+	return deal, nil
+}
+
 func (p *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
 	var deals []*model.Deal
 	rows, err := p.pool.Query(ctx, `SELECT dealid, company, purchaseprice, sharescount, takeprofit, stoploss, dealtime

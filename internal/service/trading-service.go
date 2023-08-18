@@ -20,6 +20,7 @@ type PriceRepository interface {
 	Subscribe(ctx context.Context, manager chan model.Share) error
 	AddPosition(ctx context.Context, strategy string, deal *model.Deal) error
 	ClosePosition(ctx context.Context, deal *model.Deal) error
+	GetPositionInfoByDealID(ctx context.Context, dealid uuid.UUID) (*model.Deal, error)
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
 }
 
@@ -74,8 +75,8 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 	for {
 		select {
 		case share := <-ts.chmanager.SubscribersShares[deal.ProfileID][deal.Company]:
-			if stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount)) || share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit){
-				err := ts.ClosePosition(ctx,strategy,share, deal, balance)
+			if stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount)) || share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
+				err := ts.ClosePosition(ctx, deal.DealID, deal.ProfileID)
 				if err != nil {
 					return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
 				}
@@ -107,25 +108,35 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 }
 
 // ClosePosition is a method that calls method of Repository and returns profit
-func (ts *TradingService) ClosePosition(ctx context.Context,strategy string, share model.Share, deal *model.Deal, balance *model.Balance) error {
-	balance.ProfileID = deal.ProfileID
-	deal.EndDealTime = time.Now().UTC()
-	if strategy == "long" {
-		deal.Profit = share.Price.Mul(deal.SharesCount).Sub(deal.PurchasePrice.Mul(deal.SharesCount))
-	}
-	if strategy == "short" {
-		deal.Profit = deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Price.Mul(deal.SharesCount))
-	}
-	err := ts.priceRep.ClosePosition(ctx, deal)
+func (ts *TradingService) ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) error {
+	var balance *model.Balance
+	balance.ProfileID = profileid
+	deal, err := ts.priceRep.GetPositionInfoByDealID(ctx, dealid)
 	if err != nil {
-		return fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
+		return fmt.Errorf("TradingService-ClosePosition-GetPositionInfoByDealID: error:%W", err)
 	}
-	balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
-	_, err = ts.bRep.BalanceOperation(ctx, balance)
-	if err != nil {
-		return fmt.Errorf("TradingService-GetProfit-BalanceOperation: error:%w", err)
+	select {
+	case <-ctx.Done():
+		return nil
+	case share := <-ts.chmanager.SubscribersShares[profileid][deal.Company]:
+		deal.EndDealTime = time.Now().UTC()
+		if deal.TakeProfit.Cmp(deal.StopLoss) == 1 {
+			deal.Profit = share.Price.Mul(deal.SharesCount).Sub(deal.PurchasePrice.Mul(deal.SharesCount))
+		}
+		if deal.StopLoss.Cmp(deal.TakeProfit) == 1 {
+			deal.Profit = deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Price.Mul(deal.SharesCount))
+		}
+		err = ts.priceRep.ClosePosition(ctx, deal)
+		if err != nil {
+			return fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
+		}
+		balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
+		_, err = ts.bRep.BalanceOperation(ctx, balance)
+		if err != nil {
+			return fmt.Errorf("TradingService-GetProfit-BalanceOperation: error:%w", err)
+		}
+		return nil
 	}
-	return nil
 }
 
 // Subscribe is a method of TradingService that calls method of Repository as goroutine

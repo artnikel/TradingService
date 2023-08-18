@@ -20,7 +20,7 @@ type TradingService interface {
 	GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error)
 	BalanceOperation(ctx context.Context, balance *model.Balance) (float64, error)
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
-	ClosePosition(ctx context.Context, strategy string, share model.Share, deal *model.Deal, balance *model.Balance) error
+	ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) error
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
 }
 
@@ -67,7 +67,7 @@ func (d *EntityDeal) GetProfit(ctx context.Context, req *proto.GetProfitRequest)
 
 // ClosePosition is method that calls method of Trading Service
 func (d *EntityDeal) ClosePosition(ctx context.Context, req *proto.ClosePositionRequest) (*proto.ClosePositionResponse, error) {
-	dealID, err := uuid.Parse(req.Deal.DealID)
+	dealID, err := uuid.Parse(req.Dealid)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to parse id")
@@ -77,10 +77,17 @@ func (d *EntityDeal) ClosePosition(ctx context.Context, req *proto.ClosePosition
 		logrus.Errorf("error: %v", err)
 		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to validate deal id")
 	}
-	dealToClose := &model.Deal{
-		DealID: dealID,
+	profileID, err := uuid.Parse(req.Profileid)
+	if err != nil {
+		logrus.Errorf("error: %v", err)
+		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to parse id")
 	}
-	err = d.srvTrading.ClosePosition(ctx, req.Strategy, model.Share{}, dealToClose, &model.Balance{})
+	err = d.validate.VarCtx(ctx, profileID, "required")
+	if err != nil {
+		logrus.Errorf("error: %v", err)
+		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to validate deal id")
+	}
+	err = d.srvTrading.ClosePosition(ctx, dealID, profileID)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed run close position")

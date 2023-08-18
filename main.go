@@ -71,7 +71,7 @@ func main() {
 	tsrv := service.NewTradingService(prep, brep)
 	go tsrv.Subscribe(context.Background())
 	hndl := handler.NewEntityDeal(tsrv, v)
-	lis, err := net.Listen("tcp", "localhost:8098")
+	lis, err := net.Listen("tcp", "localhost:8088")
 	if err != nil {
 		log.Fatalf("Cannot create listener: %s", err)
 	}
