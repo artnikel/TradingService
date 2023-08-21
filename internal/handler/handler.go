@@ -20,7 +20,7 @@ type TradingService interface {
 	GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error)
 	BalanceOperation(ctx context.Context, balance *model.Balance) (float64, error)
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
-	ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) error
+	ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error)
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
 }
 
@@ -87,12 +87,14 @@ func (d *EntityDeal) ClosePosition(ctx context.Context, req *proto.ClosePosition
 		logrus.Errorf("error: %v", err)
 		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to validate deal id")
 	}
-	err = d.srvTrading.ClosePosition(ctx, dealID, profileID)
+	profit, err := d.srvTrading.ClosePosition(ctx, dealID, profileID)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed run close position")
 	}
-	return &proto.ClosePositionResponse{}, nil
+	return &proto.ClosePositionResponse{
+		Profit: profit.InexactFloat64(),
+	}, nil
 }
 
 func (d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUnclosedPositionsRequest) (*proto.GetUnclosedPositionsResponse, error) {

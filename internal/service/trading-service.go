@@ -75,14 +75,7 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 	for {
 		select {
 		case share := <-ts.chmanager.SubscribersShares[deal.ProfileID][deal.Company]:
-			if stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount)) || share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
-				err := ts.ClosePosition(ctx, deal.DealID, deal.ProfileID)
-				if err != nil {
-					return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
-				}
-				return deal.Profit, nil
-			}
-			for !takenPurchasePrice {
+			if !takenPurchasePrice {
 				takenPurchasePrice = true
 				deal.PurchasePrice = share.Price
 				if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
@@ -101,6 +94,14 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 					return decimal.Zero, fmt.Errorf("TradingService-GetProfit-BalanceOperation: error:%w", err)
 				}
 			}
+			if stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount)) || share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
+				profit, err := ts.ClosePosition(ctx, deal.DealID, deal.ProfileID)
+				if err != nil {
+					return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
+				}
+				return profit, nil
+			}
+
 		case <-ctx.Done():
 			return decimal.Zero, nil
 		}
@@ -108,12 +109,12 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 }
 
 // ClosePosition is a method that calls method of Repository and returns profit
-func (ts *TradingService) ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) error {
+func (ts *TradingService) ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error) {
 	var balance model.Balance
 	balance.ProfileID = profileid
 	deal, err := ts.priceRep.GetPositionInfoByDealID(ctx, dealid)
 	if err != nil {
-		return fmt.Errorf("TradingService-ClosePosition-GetPositionInfoByDealID: error:%W", err)
+		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition-GetPositionInfoByDealID: error:%w", err)
 	}
 	if _, ok := ts.chmanager.SubscribersShares[profileid]; !ok {
 		ts.chmanager.SubscribersShares[profileid] = make(map[string]chan model.Share)
@@ -122,7 +123,7 @@ func (ts *TradingService) ClosePosition(ctx context.Context, dealid uuid.UUID, p
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return decimal.Zero, nil
 		case share := <-ts.chmanager.SubscribersShares[profileid][deal.Company]:
 			deal.EndDealTime = time.Now().UTC()
 			deal.DealID = dealid
@@ -134,14 +135,14 @@ func (ts *TradingService) ClosePosition(ctx context.Context, dealid uuid.UUID, p
 			}
 			err = ts.priceRep.ClosePosition(ctx, &deal)
 			if err != nil {
-				return fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
+				return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
 			}
 			balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
 			_, err = ts.bRep.BalanceOperation(ctx, &balance)
 			if err != nil {
-				return fmt.Errorf("TradingService-GetProfit-BalanceOperation: error:%w", err)
+				return decimal.Zero, fmt.Errorf("TradingService-GetProfit-BalanceOperation: error:%w", err)
 			}
-			return nil
+			return deal.Profit, nil
 		}
 	}
 }

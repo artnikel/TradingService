@@ -37,7 +37,9 @@ message ClosePositionRequest{
     string profileid = 2;
 }
 
-message ClosePositionResponse{}
+message ClosePositionResponse{
+    double profit = 1;
+}
 
 message GetUnclosedPositionsRequest{
     string profileid = 1;
