@@ -22,6 +22,7 @@ type TradingService interface {
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
 	ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error)
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
+	GetPrices(ctx context.Context) ([]model.Share, error)
 }
 
 // EntityDeal contains Balance Service interface
@@ -97,6 +98,7 @@ func (d *EntityDeal) ClosePosition(ctx context.Context, req *proto.ClosePosition
 	}, nil
 }
 
+// GetUnclosedPositions is method that calls method of Trading Service
 func (d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUnclosedPositionsRequest) (*proto.GetUnclosedPositionsResponse, error) {
 	profileID, err := uuid.Parse(req.Profileid)
 	if err != nil {
@@ -128,5 +130,24 @@ func (d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUnc
 	}
 	return &proto.GetUnclosedPositionsResponse{
 		Deal: protoDeals,
+	}, nil
+}
+
+func (d *EntityDeal) GetPrices(ctx context.Context, req *proto.GetPricesRequest) (*proto.GetPricesResponse, error) {
+	shares, err := d.srvTrading.GetPrices(ctx)
+	if err != nil {
+		logrus.Errorf("error: %v", err)
+		return &proto.GetPricesResponse{}, fmt.Errorf("EntityDeal-GetPrices: failed run close position")
+	}
+	protoShares := make([]*proto.TradingShare, len(shares))
+	for i, share := range shares {
+		protoShare := &proto.TradingShare{
+			Company: share.Company,
+			Price:   share.Price.InexactFloat64(),
+		}
+		protoShares[i] = protoShare
+	}
+	return &proto.GetPricesResponse{
+		Share: protoShares,
 	}, nil
 }

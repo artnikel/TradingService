@@ -88,6 +88,7 @@ func (p *PriceRepository) ClosePosition(ctx context.Context, deal *model.Deal) e
 	return nil
 }
 
+// GetPositionInfoByDealID returns info about positions by id for closing positions
 func (p *PriceRepository) GetPositionInfoByDealID(ctx context.Context, dealid uuid.UUID) (model.Deal, error) {
 	var deal model.Deal
 	err := p.pool.QueryRow(ctx, "SELECT company, purchaseprice, sharescount, stoploss, takeprofit FROM deal WHERE dealid = $1", dealid).
@@ -98,6 +99,7 @@ func (p *PriceRepository) GetPositionInfoByDealID(ctx context.Context, dealid uu
 	return deal, nil
 }
 
+// GetUnclosedPositions returns info about positions which not closed
 func (p *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
 	var deals []*model.Deal
 	rows, err := p.pool.Query(ctx, `SELECT dealid, company, purchaseprice, sharescount, takeprofit, stoploss, dealtime

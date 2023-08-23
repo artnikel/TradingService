@@ -140,6 +140,61 @@ func (x *Deal) GetProfit() float64 {
 	return 0
 }
 
+type TradingShare struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Company string  `protobuf:"bytes,1,opt,name=company,proto3" json:"company,omitempty"`
+	Price   float64 `protobuf:"fixed64,2,opt,name=price,proto3" json:"price,omitempty"`
+}
+
+func (x *TradingShare) Reset() {
+	*x = TradingShare{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_trading_service_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TradingShare) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TradingShare) ProtoMessage() {}
+
+func (x *TradingShare) ProtoReflect() protoreflect.Message {
+	mi := &file_trading_service_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TradingShare.ProtoReflect.Descriptor instead.
+func (*TradingShare) Descriptor() ([]byte, []int) {
+	return file_trading_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *TradingShare) GetCompany() string {
+	if x != nil {
+		return x.Company
+	}
+	return ""
+}
+
+func (x *TradingShare) GetPrice() float64 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
 type GetProfitRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -152,7 +207,7 @@ type GetProfitRequest struct {
 func (x *GetProfitRequest) Reset() {
 	*x = GetProfitRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_trading_service_proto_msgTypes[1]
+		mi := &file_trading_service_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -165,7 +220,7 @@ func (x *GetProfitRequest) String() string {
 func (*GetProfitRequest) ProtoMessage() {}
 
 func (x *GetProfitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trading_service_proto_msgTypes[1]
+	mi := &file_trading_service_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -178,7 +233,7 @@ func (x *GetProfitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfitRequest.ProtoReflect.Descriptor instead.
 func (*GetProfitRequest) Descriptor() ([]byte, []int) {
-	return file_trading_service_proto_rawDescGZIP(), []int{1}
+	return file_trading_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetProfitRequest) GetStrategy() string {
@@ -206,7 +261,7 @@ type GetProfitResponse struct {
 func (x *GetProfitResponse) Reset() {
 	*x = GetProfitResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_trading_service_proto_msgTypes[2]
+		mi := &file_trading_service_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -219,7 +274,7 @@ func (x *GetProfitResponse) String() string {
 func (*GetProfitResponse) ProtoMessage() {}
 
 func (x *GetProfitResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trading_service_proto_msgTypes[2]
+	mi := &file_trading_service_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -232,7 +287,7 @@ func (x *GetProfitResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfitResponse.ProtoReflect.Descriptor instead.
 func (*GetProfitResponse) Descriptor() ([]byte, []int) {
-	return file_trading_service_proto_rawDescGZIP(), []int{2}
+	return file_trading_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetProfitResponse) GetProfit() float64 {
@@ -254,7 +309,7 @@ type ClosePositionRequest struct {
 func (x *ClosePositionRequest) Reset() {
 	*x = ClosePositionRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_trading_service_proto_msgTypes[3]
+		mi := &file_trading_service_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -267,7 +322,7 @@ func (x *ClosePositionRequest) String() string {
 func (*ClosePositionRequest) ProtoMessage() {}
 
 func (x *ClosePositionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trading_service_proto_msgTypes[3]
+	mi := &file_trading_service_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -280,7 +335,7 @@ func (x *ClosePositionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClosePositionRequest.ProtoReflect.Descriptor instead.
 func (*ClosePositionRequest) Descriptor() ([]byte, []int) {
-	return file_trading_service_proto_rawDescGZIP(), []int{3}
+	return file_trading_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ClosePositionRequest) GetDealid() string {
@@ -308,7 +363,7 @@ type ClosePositionResponse struct {
 func (x *ClosePositionResponse) Reset() {
 	*x = ClosePositionResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_trading_service_proto_msgTypes[4]
+		mi := &file_trading_service_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -321,7 +376,7 @@ func (x *ClosePositionResponse) String() string {
 func (*ClosePositionResponse) ProtoMessage() {}
 
 func (x *ClosePositionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trading_service_proto_msgTypes[4]
+	mi := &file_trading_service_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -334,7 +389,7 @@ func (x *ClosePositionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClosePositionResponse.ProtoReflect.Descriptor instead.
 func (*ClosePositionResponse) Descriptor() ([]byte, []int) {
-	return file_trading_service_proto_rawDescGZIP(), []int{4}
+	return file_trading_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ClosePositionResponse) GetProfit() float64 {
@@ -355,7 +410,7 @@ type GetUnclosedPositionsRequest struct {
 func (x *GetUnclosedPositionsRequest) Reset() {
 	*x = GetUnclosedPositionsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_trading_service_proto_msgTypes[5]
+		mi := &file_trading_service_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -368,7 +423,7 @@ func (x *GetUnclosedPositionsRequest) String() string {
 func (*GetUnclosedPositionsRequest) ProtoMessage() {}
 
 func (x *GetUnclosedPositionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trading_service_proto_msgTypes[5]
+	mi := &file_trading_service_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -381,7 +436,7 @@ func (x *GetUnclosedPositionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUnclosedPositionsRequest.ProtoReflect.Descriptor instead.
 func (*GetUnclosedPositionsRequest) Descriptor() ([]byte, []int) {
-	return file_trading_service_proto_rawDescGZIP(), []int{5}
+	return file_trading_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetUnclosedPositionsRequest) GetProfileid() string {
@@ -402,7 +457,7 @@ type GetUnclosedPositionsResponse struct {
 func (x *GetUnclosedPositionsResponse) Reset() {
 	*x = GetUnclosedPositionsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_trading_service_proto_msgTypes[6]
+		mi := &file_trading_service_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -415,7 +470,7 @@ func (x *GetUnclosedPositionsResponse) String() string {
 func (*GetUnclosedPositionsResponse) ProtoMessage() {}
 
 func (x *GetUnclosedPositionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trading_service_proto_msgTypes[6]
+	mi := &file_trading_service_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -428,12 +483,97 @@ func (x *GetUnclosedPositionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUnclosedPositionsResponse.ProtoReflect.Descriptor instead.
 func (*GetUnclosedPositionsResponse) Descriptor() ([]byte, []int) {
-	return file_trading_service_proto_rawDescGZIP(), []int{6}
+	return file_trading_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetUnclosedPositionsResponse) GetDeal() []*Deal {
 	if x != nil {
 		return x.Deal
+	}
+	return nil
+}
+
+type GetPricesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *GetPricesRequest) Reset() {
+	*x = GetPricesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_trading_service_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetPricesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPricesRequest) ProtoMessage() {}
+
+func (x *GetPricesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_trading_service_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPricesRequest.ProtoReflect.Descriptor instead.
+func (*GetPricesRequest) Descriptor() ([]byte, []int) {
+	return file_trading_service_proto_rawDescGZIP(), []int{8}
+}
+
+type GetPricesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Share []*TradingShare `protobuf:"bytes,1,rep,name=share,proto3" json:"share,omitempty"`
+}
+
+func (x *GetPricesResponse) Reset() {
+	*x = GetPricesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_trading_service_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetPricesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPricesResponse) ProtoMessage() {}
+
+func (x *GetPricesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_trading_service_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPricesResponse.ProtoReflect.Descriptor instead.
+func (*GetPricesResponse) Descriptor() ([]byte, []int) {
+	return file_trading_service_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetPricesResponse) GetShare() []*TradingShare {
+	if x != nil {
+		return x.Share
 	}
 	return nil
 }
@@ -467,7 +607,11 @@ var file_trading_service_proto_rawDesc = []byte{
 	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0b,
 	0x45, 0x6e, 0x64, 0x44, 0x65, 0x61, 0x6c, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x50,
 	0x72, 0x6f, 0x66, 0x69, 0x74, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x50, 0x72, 0x6f,
-	0x66, 0x69, 0x74, 0x22, 0x49, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74,
+	0x66, 0x69, 0x74, 0x22, 0x3e, 0x0a, 0x0c, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x68,
+	0x61, 0x72, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x6e, 0x79, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x6e, 0x79, 0x12, 0x14, 0x0a,
+	0x05, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x05, 0x70, 0x72,
+	0x69, 0x63, 0x65, 0x22, 0x49, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1a, 0x0a, 0x08, 0x73, 0x74, 0x72, 0x61, 0x74,
 	0x65, 0x67, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x73, 0x74, 0x72, 0x61, 0x74,
 	0x65, 0x67, 0x79, 0x12, 0x19, 0x0a, 0x04, 0x64, 0x65, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28,
@@ -490,24 +634,32 @@ var file_trading_service_proto_rawDesc = []byte{
 	0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x19, 0x0a, 0x04, 0x64, 0x65, 0x61, 0x6c, 0x18,
 	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x05, 0x2e, 0x44, 0x65, 0x61, 0x6c, 0x52, 0x04, 0x64, 0x65,
-	0x61, 0x6c, 0x32, 0xd9, 0x01, 0x0a, 0x0e, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x32, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66,
-	0x69, 0x74, 0x12, 0x11, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69,
-	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x0d, 0x43, 0x6c, 0x6f,
-	0x73, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x15, 0x2e, 0x43, 0x6c, 0x6f,
-	0x73, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x16, 0x2e, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a, 0x14, 0x47, 0x65, 0x74,
-	0x55, 0x6e, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x12, 0x1c, 0x2e, 0x47, 0x65, 0x74, 0x55, 0x6e, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50,
-	0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x1d, 0x2e, 0x47, 0x65, 0x74, 0x55, 0x6e, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f, 0x73,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x2a,
-	0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x74,
-	0x6e, 0x69, 0x6b, 0x65, 0x6c, 0x2f, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x61, 0x6c, 0x22, 0x12, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x38, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x50, 0x72, 0x69,
+	0x63, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x23, 0x0a, 0x05, 0x73,
+	0x68, 0x61, 0x72, 0x65, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x54, 0x72, 0x61,
+	0x64, 0x69, 0x6e, 0x67, 0x53, 0x68, 0x61, 0x72, 0x65, 0x52, 0x05, 0x73, 0x68, 0x61, 0x72, 0x65,
+	0x32, 0x8d, 0x02, 0x0a, 0x0e, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x12, 0x32, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74,
+	0x12, 0x11, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x66, 0x69, 0x74, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x0d, 0x43, 0x6c, 0x6f, 0x73, 0x65,
+	0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x15, 0x2e, 0x43, 0x6c, 0x6f, 0x73, 0x65,
+	0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x16, 0x2e, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x55, 0x6e,
+	0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
+	0x1c, 0x2e, 0x47, 0x65, 0x74, 0x55, 0x6e, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f, 0x73,
+	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e,
+	0x47, 0x65, 0x74, 0x55, 0x6e, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x50, 0x6f, 0x73, 0x69, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x32, 0x0a, 0x09,
+	0x47, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65, 0x73, 0x12, 0x11, 0x2e, 0x47, 0x65, 0x74, 0x50,
+	0x72, 0x69, 0x63, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x47,
+	0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61,
+	0x72, 0x74, 0x6e, 0x69, 0x6b, 0x65, 0x6c, 0x2f, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x53,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -522,33 +674,39 @@ func file_trading_service_proto_rawDescGZIP() []byte {
 	return file_trading_service_proto_rawDescData
 }
 
-var file_trading_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_trading_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_trading_service_proto_goTypes = []interface{}{
 	(*Deal)(nil),                         // 0: Deal
-	(*GetProfitRequest)(nil),             // 1: GetProfitRequest
-	(*GetProfitResponse)(nil),            // 2: GetProfitResponse
-	(*ClosePositionRequest)(nil),         // 3: ClosePositionRequest
-	(*ClosePositionResponse)(nil),        // 4: ClosePositionResponse
-	(*GetUnclosedPositionsRequest)(nil),  // 5: GetUnclosedPositionsRequest
-	(*GetUnclosedPositionsResponse)(nil), // 6: GetUnclosedPositionsResponse
-	(*timestamppb.Timestamp)(nil),        // 7: google.protobuf.Timestamp
+	(*TradingShare)(nil),                 // 1: TradingShare
+	(*GetProfitRequest)(nil),             // 2: GetProfitRequest
+	(*GetProfitResponse)(nil),            // 3: GetProfitResponse
+	(*ClosePositionRequest)(nil),         // 4: ClosePositionRequest
+	(*ClosePositionResponse)(nil),        // 5: ClosePositionResponse
+	(*GetUnclosedPositionsRequest)(nil),  // 6: GetUnclosedPositionsRequest
+	(*GetUnclosedPositionsResponse)(nil), // 7: GetUnclosedPositionsResponse
+	(*GetPricesRequest)(nil),             // 8: GetPricesRequest
+	(*GetPricesResponse)(nil),            // 9: GetPricesResponse
+	(*timestamppb.Timestamp)(nil),        // 10: google.protobuf.Timestamp
 }
 var file_trading_service_proto_depIdxs = []int32{
-	7, // 0: Deal.DealTime:type_name -> google.protobuf.Timestamp
-	7, // 1: Deal.EndDealTime:type_name -> google.protobuf.Timestamp
-	0, // 2: GetProfitRequest.deal:type_name -> Deal
-	0, // 3: GetUnclosedPositionsResponse.deal:type_name -> Deal
-	1, // 4: TradingService.GetProfit:input_type -> GetProfitRequest
-	3, // 5: TradingService.ClosePosition:input_type -> ClosePositionRequest
-	5, // 6: TradingService.GetUnclosedPositions:input_type -> GetUnclosedPositionsRequest
-	2, // 7: TradingService.GetProfit:output_type -> GetProfitResponse
-	4, // 8: TradingService.ClosePosition:output_type -> ClosePositionResponse
-	6, // 9: TradingService.GetUnclosedPositions:output_type -> GetUnclosedPositionsResponse
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	10, // 0: Deal.DealTime:type_name -> google.protobuf.Timestamp
+	10, // 1: Deal.EndDealTime:type_name -> google.protobuf.Timestamp
+	0,  // 2: GetProfitRequest.deal:type_name -> Deal
+	0,  // 3: GetUnclosedPositionsResponse.deal:type_name -> Deal
+	1,  // 4: GetPricesResponse.share:type_name -> TradingShare
+	2,  // 5: TradingService.GetProfit:input_type -> GetProfitRequest
+	4,  // 6: TradingService.ClosePosition:input_type -> ClosePositionRequest
+	6,  // 7: TradingService.GetUnclosedPositions:input_type -> GetUnclosedPositionsRequest
+	8,  // 8: TradingService.GetPrices:input_type -> GetPricesRequest
+	3,  // 9: TradingService.GetProfit:output_type -> GetProfitResponse
+	5,  // 10: TradingService.ClosePosition:output_type -> ClosePositionResponse
+	7,  // 11: TradingService.GetUnclosedPositions:output_type -> GetUnclosedPositionsResponse
+	9,  // 12: TradingService.GetPrices:output_type -> GetPricesResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_trading_service_proto_init() }
@@ -570,7 +728,7 @@ func file_trading_service_proto_init() {
 			}
 		}
 		file_trading_service_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetProfitRequest); i {
+			switch v := v.(*TradingShare); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -582,7 +740,7 @@ func file_trading_service_proto_init() {
 			}
 		}
 		file_trading_service_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetProfitResponse); i {
+			switch v := v.(*GetProfitRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -594,7 +752,7 @@ func file_trading_service_proto_init() {
 			}
 		}
 		file_trading_service_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClosePositionRequest); i {
+			switch v := v.(*GetProfitResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -606,7 +764,7 @@ func file_trading_service_proto_init() {
 			}
 		}
 		file_trading_service_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClosePositionResponse); i {
+			switch v := v.(*ClosePositionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -618,7 +776,7 @@ func file_trading_service_proto_init() {
 			}
 		}
 		file_trading_service_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetUnclosedPositionsRequest); i {
+			switch v := v.(*ClosePositionResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -630,7 +788,43 @@ func file_trading_service_proto_init() {
 			}
 		}
 		file_trading_service_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetUnclosedPositionsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_trading_service_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetUnclosedPositionsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_trading_service_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetPricesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_trading_service_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetPricesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -648,7 +842,7 @@ func file_trading_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_trading_service_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

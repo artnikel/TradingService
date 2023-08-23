@@ -21,6 +21,7 @@ type TradingServiceClient interface {
 	GetProfit(ctx context.Context, in *GetProfitRequest, opts ...grpc.CallOption) (*GetProfitResponse, error)
 	ClosePosition(ctx context.Context, in *ClosePositionRequest, opts ...grpc.CallOption) (*ClosePositionResponse, error)
 	GetUnclosedPositions(ctx context.Context, in *GetUnclosedPositionsRequest, opts ...grpc.CallOption) (*GetUnclosedPositionsResponse, error)
+	GetPrices(ctx context.Context, in *GetPricesRequest, opts ...grpc.CallOption) (*GetPricesResponse, error)
 }
 
 type tradingServiceClient struct {
@@ -58,6 +59,15 @@ func (c *tradingServiceClient) GetUnclosedPositions(ctx context.Context, in *Get
 	return out, nil
 }
 
+func (c *tradingServiceClient) GetPrices(ctx context.Context, in *GetPricesRequest, opts ...grpc.CallOption) (*GetPricesResponse, error) {
+	out := new(GetPricesResponse)
+	err := c.cc.Invoke(ctx, "/TradingService/GetPrices", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradingServiceServer is the server API for TradingService service.
 // All implementations must embed UnimplementedTradingServiceServer
 // for forward compatibility
@@ -65,6 +75,7 @@ type TradingServiceServer interface {
 	GetProfit(context.Context, *GetProfitRequest) (*GetProfitResponse, error)
 	ClosePosition(context.Context, *ClosePositionRequest) (*ClosePositionResponse, error)
 	GetUnclosedPositions(context.Context, *GetUnclosedPositionsRequest) (*GetUnclosedPositionsResponse, error)
+	GetPrices(context.Context, *GetPricesRequest) (*GetPricesResponse, error)
 	mustEmbedUnimplementedTradingServiceServer()
 }
 
@@ -80,6 +91,9 @@ func (UnimplementedTradingServiceServer) ClosePosition(context.Context, *ClosePo
 }
 func (UnimplementedTradingServiceServer) GetUnclosedPositions(context.Context, *GetUnclosedPositionsRequest) (*GetUnclosedPositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUnclosedPositions not implemented")
+}
+func (UnimplementedTradingServiceServer) GetPrices(context.Context, *GetPricesRequest) (*GetPricesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPrices not implemented")
 }
 func (UnimplementedTradingServiceServer) mustEmbedUnimplementedTradingServiceServer() {}
 
@@ -148,6 +162,24 @@ func _TradingService_GetUnclosedPositions_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingService_GetPrices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPricesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingServiceServer).GetPrices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/TradingService/GetPrices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingServiceServer).GetPrices(ctx, req.(*GetPricesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TradingService_ServiceDesc is the grpc.ServiceDesc for TradingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -166,6 +198,10 @@ var TradingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUnclosedPositions",
 			Handler:    _TradingService_GetUnclosedPositions_Handler,
+		},
+		{
+			MethodName: "GetPrices",
+			Handler:    _TradingService_GetPrices_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

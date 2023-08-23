@@ -17,10 +17,16 @@ message Deal {
 	double Profit = 10;
 }
 
+message TradingShare {
+    string company = 1;
+    double price = 2;
+}
+
 service TradingService {
     rpc GetProfit(GetProfitRequest) returns (GetProfitResponse);
     rpc ClosePosition(ClosePositionRequest) returns (ClosePositionResponse);
     rpc GetUnclosedPositions(GetUnclosedPositionsRequest) returns (GetUnclosedPositionsResponse);
+    rpc GetPrices(GetPricesRequest) returns (GetPricesResponse);
 }
 
 message GetProfitRequest{
@@ -47,4 +53,10 @@ message GetUnclosedPositionsRequest{
 
 message GetUnclosedPositionsResponse{
     repeated Deal deal = 1;
+}
+
+message GetPricesRequest{}
+
+message GetPricesResponse{
+ repeated TradingShare share = 1;
 }

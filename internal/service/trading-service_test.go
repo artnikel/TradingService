@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"testing"
-	//"time"
 
 	"github.com/artnikel/TradingService/internal/model"
 	"github.com/artnikel/TradingService/internal/service/mocks"
@@ -49,18 +48,3 @@ func TestGetBalanceAndOperation(t *testing.T) {
 	require.Equal(t, money, testBalance.Operation.InexactFloat64())
 	rep.AssertExpectations(t)
 }
-
-// func TestStrategies(t *testing.T) {
-// 	prep := new(mocks.PriceRepository)
-// 	brep := new(mocks.BalanceRepository)
-// 	srv := NewTradingService(prep, brep)
-// 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
-// 	prep.On("Subscribe", mock.Anything, mock.AnythingOfType("*model.Deal"), mock.AnythingOfType("chan []*model.Share")).Return(nil).Once()
-// 	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
-// 	prep.On("AddDeal", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).
-// 		Return(nil).Once()
-// 	_, err := srv.Strategies(context.Background(), testStrategy, testDeal)
-// 	require.NoError(t, err)
-// 	brep.AssertExpectations(t)
-// 	prep.AssertExpectations(t)
-// }
