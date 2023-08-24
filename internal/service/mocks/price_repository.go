@@ -44,6 +44,27 @@ func (_m *PriceRepository) ClosePosition(ctx context.Context, deal *model.Deal) 
 	return r0
 }
 
+// GetPositionInfoByDealID provides a mock function with given fields: ctx, dealid
+func (_m *PriceRepository) GetPositionInfoByDealID(ctx context.Context, dealid uuid.UUID) (model.Deal, error) {
+	ret := _m.Called(ctx, dealid)
+
+	var r0 model.Deal
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) model.Deal); ok {
+		r0 = rf(ctx, dealid)
+	} else {
+		r0 = ret.Get(0).(model.Deal)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, dealid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetUnclosedPositions provides a mock function with given fields: ctx, profileid
 func (_m *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
 	ret := _m.Called(ctx, profileid)

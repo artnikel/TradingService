@@ -40,18 +40,25 @@ func (_m *TradingService) BalanceOperation(ctx context.Context, balance *model.B
 	return r0, r1
 }
 
-// ClosePosition provides a mock function with given fields: ctx, strategy, share, deal, balance
-func (_m *TradingService) ClosePosition(ctx context.Context, strategy string, share model.Share, deal *model.Deal, balance *model.Balance) error {
-	ret := _m.Called(ctx, strategy, share, deal, balance)
+// ClosePosition provides a mock function with given fields: ctx, dealid, profileid
+func (_m *TradingService) ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error) {
+	ret := _m.Called(ctx, dealid, profileid)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.Share, *model.Deal, *model.Balance) error); ok {
-		r0 = rf(ctx, strategy, share, deal, balance)
+	var r0 decimal.Decimal
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) decimal.Decimal); ok {
+		r0 = rf(ctx, dealid, profileid)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(decimal.Decimal)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
+		r1 = rf(ctx, dealid, profileid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetBalance provides a mock function with given fields: ctx, profileid
@@ -68,6 +75,29 @@ func (_m *TradingService) GetBalance(ctx context.Context, profileid uuid.UUID) (
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, profileid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetPrices provides a mock function with given fields: ctx
+func (_m *TradingService) GetPrices(ctx context.Context) ([]model.Share, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []model.Share
+	if rf, ok := ret.Get(0).(func(context.Context) []model.Share); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Share)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

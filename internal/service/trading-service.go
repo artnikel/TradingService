@@ -181,6 +181,7 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 	}
 }
 
+// GetUnclosedPositions is method that read actual prices of shares
 func (ts *TradingService) GetPrices(ctx context.Context) ([]model.Share, error) {
 	var cfg config.Variables
 	if err := env.Parse(&cfg); err != nil {
@@ -189,29 +190,37 @@ func (ts *TradingService) GetPrices(ctx context.Context) ([]model.Share, error) 
 	var shares []model.Share
 	companyShares := strings.Split(cfg.CompanyShares, ",")
 	priceUUID := uuid.New()
-	ts.chmanager.Mu.Lock() 
+	
+	ts.chmanager.Mu.Lock()
 	defer ts.chmanager.Mu.Unlock()
 
 	if _, ok := ts.chmanager.SubscribersShares[priceUUID]; !ok {
 		ts.chmanager.SubscribersShares[priceUUID] = make(map[string]chan model.Share)
 	}
-
+	
+	var channelsToCreate []string
 	for _, company := range companyShares {
-		ts.chmanager.SubscribersShares[priceUUID][company] = make(chan model.Share)
+		if _, exists := ts.chmanager.SubscribersShares[priceUUID][company]; !exists {
+			channelsToCreate = append(channelsToCreate, company)
+		}
 	}
+
+	for _, company := range channelsToCreate {
+		ts.chmanager.SubscribersShares[priceUUID][company] = make(chan model.Share, len(companyShares))
+	}
+	
 	for i := 0; i < len(companyShares); {
 		select {
 		case <-ctx.Done():
-			return nil, nil
+			return shares, nil
 		case share := <-ts.chmanager.SubscribersShares[priceUUID][companyShares[i]]:
 			shares = append(shares, share)
 			i++
-		default:
-			continue
 		}
 	}
 	return shares, nil
 }
+
 
 // GetUnclosedPositions is a method of TradingService calls method of Repository
 func (ts *TradingService) GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
