@@ -13,15 +13,14 @@ import (
 	"github.com/artnikel/TradingService/internal/repository"
 	"github.com/artnikel/TradingService/internal/service"
 	"github.com/artnikel/TradingService/proto"
-	"github.com/caarlos0/env"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func connectPostgres(cfg *config.Variables) (*pgxpool.Pool, error) {
-	cfgPostgres, err := pgxpool.ParseConfig(cfg.PostgresConnTrading)
+func connectPostgres(connString string) (*pgxpool.Pool, error) {
+	cfgPostgres, err := pgxpool.ParseConfig(connString)
 	if err != nil {
 		return nil, err
 	}
@@ -36,32 +35,30 @@ func connectPostgres(cfg *config.Variables) (*pgxpool.Pool, error) {
 func main() {
 	pconn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("could not connect: %v", err)
+		log.Fatalf("Could not connect: %v", err)
 	}
 	bconn, err := grpc.Dial("localhost:8095", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("could not connect: %v", err)
+		log.Fatalf("Could not connect: %v", err)
 	}
 	defer func() {
 		errConnClose := pconn.Close()
 		if err != nil {
-			log.Fatalf("could not close connection: %v", errConnClose)
+			log.Fatalf("Could not close connection: %v", errConnClose)
 		}
 		errConnClose = bconn.Close()
 		if err != nil {
-			log.Fatalf("could not close connection: %v", errConnClose)
+			log.Fatalf("Could not close connection: %v", errConnClose)
 		}
 	}()
-	var (
-		cfg config.Variables
-		v   = validator.New()
-	)
-	if err := env.Parse(&cfg); err != nil {
-		log.Fatal("could not parse config: ", err)
+	cfg, err := config.New()
+	if err != nil {
+		log.Fatal("Could not parse config: ", err)
 	}
-	dbpool, errPool := connectPostgres(&cfg)
+	v := validator.New()
+	dbpool, errPool := connectPostgres(cfg.PostgresConnTrading)
 	if errPool != nil {
-		log.Fatal("could not construct the pool: ", errPool)
+		log.Fatal("Could not construct the pool: ", errPool)
 	}
 	defer dbpool.Close()
 	pclient := pproto.NewPriceServiceClient(pconn)
@@ -69,7 +66,9 @@ func main() {
 	prep := repository.NewPriceRepository(pclient, dbpool)
 	brep := repository.NewBalanceRepository(bclient)
 	tsrv := service.NewTradingService(prep, brep)
-	go tsrv.Subscribe(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go tsrv.Subscribe(ctx)
 	hndl := handler.NewEntityDeal(tsrv, v)
 	lis, err := net.Listen("tcp", "localhost:8088")
 	if err != nil {

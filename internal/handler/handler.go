@@ -133,8 +133,8 @@ func (d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUnc
 	}, nil
 }
 
-// GetUnclosedPositions is method that calls method of Trading Service
-func (d *EntityDeal) GetPrices(ctx context.Context, req *proto.GetPricesRequest) (*proto.GetPricesResponse, error) {
+// GetPrices is method that calls method of Trading Service
+func (d *EntityDeal) GetPrices(ctx context.Context, _ *proto.GetPricesRequest) (*proto.GetPricesResponse, error) {
 	shares, err := d.srvTrading.GetPrices(ctx)
 	if err != nil {
 		logrus.Errorf("error: %v", err)

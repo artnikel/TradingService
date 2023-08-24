@@ -20,7 +20,7 @@ var (
 		Operation: decimal.NewFromFloat(100.9),
 	}
 	//testStrategy = "short"
-	testDeal     = &model.Deal{
+	testDeal = &model.Deal{
 		DealID:        uuid.New(),
 		SharesCount:   decimal.NewFromFloat(1.5),
 		ProfileID:     testBalance.ProfileID,
