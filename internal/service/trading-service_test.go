@@ -21,7 +21,7 @@ var (
 		Operation: decimal.NewFromFloat(100.9),
 	}
 	testStrategy = "short"
-	testDeal = &model.Deal{
+	testDeal     = &model.Deal{
 		DealID:        uuid.New(),
 		SharesCount:   decimal.NewFromFloat(1.5),
 		ProfileID:     testBalance.ProfileID,
@@ -32,7 +32,7 @@ var (
 		DealTime:      time.Now().UTC(),
 	}
 	testProfit = decimal.NewFromFloat(150)
-	cfg config.Variables
+	cfg        config.Variables
 )
 
 func TestBalanceOperation(t *testing.T) {
@@ -99,5 +99,14 @@ func TestGetUnclosedPositions(t *testing.T) {
 	unclosedDeals, err := srv.GetUnclosedPositions(context.Background(), testBalance.ProfileID)
 	require.NoError(t, err)
 	require.Equal(t, len(unclosedDeals), len(sliceDeals))
+	trep.AssertExpectations(t)
+}
+
+func TestGetPrices(t *testing.T) {
+	trep := new(mocks.PriceRepository)
+	srv := NewTradingService(trep, nil, cfg)
+	prices, err := srv.GetPrices()
+	require.NoError(t, err)
+	require.Empty(t, prices)
 	trep.AssertExpectations(t)
 }
