@@ -82,13 +82,13 @@ func (_m *TradingService) GetBalance(ctx context.Context, profileid uuid.UUID) (
 	return r0, r1
 }
 
-// GetPrices provides a mock function with given fields: ctx
-func (_m *TradingService) GetPrices(ctx context.Context) ([]model.Share, error) {
-	ret := _m.Called(ctx)
+// GetPrices provides a mock function with given fields:
+func (_m *TradingService) GetPrices() ([]model.Share, error) {
+	ret := _m.Called()
 
 	var r0 []model.Share
-	if rf, ok := ret.Get(0).(func(context.Context) []model.Share); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func() []model.Share); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]model.Share)
@@ -96,8 +96,8 @@ func (_m *TradingService) GetPrices(ctx context.Context) ([]model.Share, error) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}

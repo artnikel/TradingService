@@ -34,15 +34,18 @@ type TradingService struct {
 	priceRep  PriceRepository
 	bRep      BalanceRepository
 	chmanager *model.ChanManager
+	cfg       config.Variables
 }
 
 // NewTradingService accepts PriceRepository object and returnes an object of type *PriceService
-func NewTradingService(priceRep PriceRepository, bRep BalanceRepository) *TradingService {
+func NewTradingService(priceRep PriceRepository, bRep BalanceRepository, cfg config.Variables) *TradingService {
 	return &TradingService{
 		priceRep: priceRep,
 		bRep:     bRep,
 		chmanager: &model.ChanManager{
-			SubscribersShares: make(map[uuid.UUID]map[string]chan model.Share)},
+			SubscribersShares: make(map[uuid.UUID]map[string]chan model.Share),
+			PricesMap:         make(map[string]decimal.Decimal)},
+		cfg: cfg,
 	}
 }
 
@@ -147,11 +150,7 @@ func (ts *TradingService) ClosePosition(ctx context.Context, dealid, profileid u
 
 // Subscribe is a method of TradingService that calls method of Repository as goroutine
 func (ts *TradingService) Subscribe(ctx context.Context) {
-	cfg, err := config.New()
-	if err != nil {
-		log.Fatal("TradingService-GetPrices: could not parse config: ", err)
-	}
-	companyShares := strings.Split(cfg.CompanyShares, ",")
+	companyShares := strings.Split(ts.cfg.CompanyShares, ",")
 	manager := make(chan model.Share, len(companyShares))
 	go func() {
 		err := ts.priceRep.Subscribe(ctx, manager)
@@ -167,6 +166,9 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 			if !ok {
 				return
 			}
+			ts.chmanager.Mu.Lock()
+			ts.chmanager.PricesMap[share.Company] = share.Price
+			ts.chmanager.Mu.Unlock()
 			for subID, subShares := range ts.chmanager.SubscribersShares {
 				for subCompany := range subShares {
 					if share.Company == subCompany {
@@ -181,35 +183,17 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 }
 
 // GetPrices is method that read actual prices of shares
-func (ts *TradingService) GetPrices(ctx context.Context) ([]model.Share, error) {
-	cfg, err := config.New()
-	if err != nil {
-		log.Fatal("TradingService-GetPrices: could not parse config: ", err)
-	}
+func (ts *TradingService) GetPrices() ([]model.Share, error) {
 	var shares []model.Share
-	companyShares := strings.Split(cfg.CompanyShares, ",")
-	priceUUID := uuid.New()
-
+	companyShares := strings.Split(ts.cfg.CompanyShares, ",")
 	ts.chmanager.Mu.Lock()
 	defer ts.chmanager.Mu.Unlock()
-
-	ts.chmanager.SubscribersShares[priceUUID] = make(map[string]chan model.Share)
-	var channelsToCreate []string
 	for _, company := range companyShares {
-		if _, exists := ts.chmanager.SubscribersShares[priceUUID][company]; !exists {
-			channelsToCreate = append(channelsToCreate, company)
-		}
-	}
-	for _, company := range channelsToCreate {
-		ts.chmanager.SubscribersShares[priceUUID][company] = make(chan model.Share, len(companyShares))
-	}
-
-	for i := 0; i < len(companyShares); i++ {
-		select {
-		case <-ctx.Done():
-			return shares, nil
-		case share := <-ts.chmanager.SubscribersShares[priceUUID][companyShares[i]]:
-			shares = append(shares, share)
+		if price, exists := ts.chmanager.PricesMap[company]; exists {
+			shares = append(shares, model.Share{
+				Company: company,
+				Price:   price,
+			})
 		}
 	}
 	return shares, nil

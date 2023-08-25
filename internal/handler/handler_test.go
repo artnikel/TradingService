@@ -28,6 +28,10 @@ var (
 		TakeProfit:  decimal.NewFromFloat(1000),
 		DealTime:    time.Now().UTC(),
 	}
+	testShare = &model.Share{
+		Company: "Microsoft",
+		Price:   decimal.NewFromFloat(999),
+	}
 )
 
 func TestGetProfit(t *testing.T) {
@@ -73,5 +77,24 @@ func TestGetUnclosedPositions(t *testing.T) {
 		Profileid: testDeal.ProfileID.String(),
 	})
 	require.NoError(t, err)
+	srv.AssertExpectations(t)
+}
+
+func TestGetPrices(t *testing.T) {
+	srv := new(mocks.TradingService)
+	hndl := NewEntityDeal(srv, v)
+	var prices []model.Share
+	prices = append(prices, *testShare)
+	srv.On("GetPrices").Return(prices, nil)
+	resp, err := hndl.GetPrices(context.Background(), &proto.GetPricesRequest{})
+	require.NoError(t, err)
+	for _, share := range resp.Share {
+		for _, price := range prices {
+			price.Company = share.Company
+			price.Price = decimal.NewFromFloat(share.Price)
+			require.Equal(t, price.Company, testShare.Company)
+			require.Equal(t, price.Price, testShare.Price)
+		}
+	}
 	srv.AssertExpectations(t)
 }

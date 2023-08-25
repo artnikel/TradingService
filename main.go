@@ -65,7 +65,7 @@ func main() {
 	bclient := bproto.NewBalanceServiceClient(bconn)
 	prep := repository.NewPriceRepository(pclient, dbpool)
 	brep := repository.NewBalanceRepository(bclient)
-	tsrv := service.NewTradingService(prep, brep)
+	tsrv := service.NewTradingService(prep, brep, *cfg)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go tsrv.Subscribe(ctx)

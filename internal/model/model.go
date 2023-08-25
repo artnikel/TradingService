@@ -39,5 +39,6 @@ type Balance struct {
 // ChanManager contains custom map to work with shares of subscribers
 type ChanManager struct {
 	SubscribersShares map[uuid.UUID]map[string]chan Share
+	PricesMap         map[string]decimal.Decimal
 	Mu                sync.RWMutex
 }
