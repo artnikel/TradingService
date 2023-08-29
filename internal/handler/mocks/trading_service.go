@@ -61,6 +61,20 @@ func (_m *TradingService) ClosePosition(ctx context.Context, dealid uuid.UUID, p
 	return r0, r1
 }
 
+// CreatePosition provides a mock function with given fields: ctx, strategy, deal
+func (_m *TradingService) CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error {
+	ret := _m.Called(ctx, strategy, deal)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Deal) error); ok {
+		r0 = rf(ctx, strategy, deal)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetBalance provides a mock function with given fields: ctx, profileid
 func (_m *TradingService) GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error) {
 	ret := _m.Called(ctx, profileid)
@@ -98,27 +112,6 @@ func (_m *TradingService) GetPrices() ([]model.Share, error) {
 	var r1 error
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetProfit provides a mock function with given fields: ctx, strategy, deal
-func (_m *TradingService) GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
-	ret := _m.Called(ctx, strategy, deal)
-
-	var r0 decimal.Decimal
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Deal) decimal.Decimal); ok {
-		r0 = rf(ctx, strategy, deal)
-	} else {
-		r0 = ret.Get(0).(decimal.Decimal)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Deal) error); ok {
-		r1 = rf(ctx, strategy, deal)
 	} else {
 		r1 = ret.Error(1)
 	}

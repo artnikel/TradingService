@@ -34,7 +34,7 @@ var (
 	}
 )
 
-func TestGetProfit(t *testing.T) {
+func TestCreatePosition(t *testing.T) {
 	srv := new(mocks.TradingService)
 	hndl := NewEntityDeal(srv, v)
 	protoDeal := &proto.Deal{
@@ -47,7 +47,7 @@ func TestGetProfit(t *testing.T) {
 		DealTime:    timestamppb.Now(),
 	}
 	srv.On("GetProfit", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(testDeal.Profit, nil).Once()
-	_, err := hndl.GetProfit(context.Background(), &proto.GetProfitRequest{
+	_, err := hndl.CreatePosition(context.Background(), &proto.CreatePositionRequest{
 		Strategy: testStrategy,
 		Deal:     protoDeal,
 	})

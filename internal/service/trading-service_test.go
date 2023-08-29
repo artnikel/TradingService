@@ -65,7 +65,7 @@ func TestGetProfit(t *testing.T) {
 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("uuid.UUID")).Return(testProfit, nil).Once()
 	trep.On("AddPosition", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(nil).Once()
-	_, err := srv.GetProfit(ctx, testStrategy, testDeal)
+	err := srv.GetProfit(ctx, testStrategy, testDeal)
 	require.NoError(t, err)
 	profit, err := srv.ClosePosition(ctx, testDeal.DealID, testBalance.ProfileID)
 	require.NoError(t, err)

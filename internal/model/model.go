@@ -17,16 +17,16 @@ type Share struct {
 
 // Deal is a struct for creating new deals
 type Deal struct {
-	DealID        uuid.UUID
+	DealID        uuid.UUID       `json:"dealid"`
 	SharesCount   decimal.Decimal `json:"sharescount"`
 	ProfileID     uuid.UUID       `json:"profileid" validate:"required"`
 	Company       string          `json:"company" validate:"required"`
-	PurchasePrice decimal.Decimal
+	PurchasePrice decimal.Decimal `json:"purchaseprice"`
 	StopLoss      decimal.Decimal `json:"stoploss" validate:"required"`
 	TakeProfit    decimal.Decimal `json:"takeprofit" validate:"required"`
-	DealTime      time.Time
-	EndDealTime   time.Time
-	Profit        decimal.Decimal
+	DealTime      time.Time       `json:"dealtime"`
+	EndDealTime   time.Time       `json:"enddealtime"`
+	Profit        decimal.Decimal `json:"profit"`
 }
 
 // Balance contains an info about the balance and will be written in a balance table
@@ -40,5 +40,6 @@ type Balance struct {
 type ChanManager struct {
 	SubscribersShares map[uuid.UUID]map[string]chan Share
 	PricesMap         map[string]decimal.Decimal
+	Positions         map[uuid.UUID]Deal
 	Mu                sync.RWMutex
 }

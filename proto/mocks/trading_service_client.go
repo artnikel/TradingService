@@ -47,6 +47,36 @@ func (_m *TradingServiceClient) ClosePosition(ctx context.Context, in *proto.Clo
 	return r0, r1
 }
 
+// CreatePosition provides a mock function with given fields: ctx, in, opts
+func (_m *TradingServiceClient) CreatePosition(ctx context.Context, in *proto.CreatePositionRequest, opts ...grpc.CallOption) (*proto.CreatePositionResponse, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *proto.CreatePositionResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *proto.CreatePositionRequest, ...grpc.CallOption) *proto.CreatePositionResponse); ok {
+		r0 = rf(ctx, in, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*proto.CreatePositionResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *proto.CreatePositionRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetPrices provides a mock function with given fields: ctx, in, opts
 func (_m *TradingServiceClient) GetPrices(ctx context.Context, in *proto.GetPricesRequest, opts ...grpc.CallOption) (*proto.GetPricesResponse, error) {
 	_va := make([]interface{}, len(opts))
@@ -69,36 +99,6 @@ func (_m *TradingServiceClient) GetPrices(ctx context.Context, in *proto.GetPric
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *proto.GetPricesRequest, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetProfit provides a mock function with given fields: ctx, in, opts
-func (_m *TradingServiceClient) GetProfit(ctx context.Context, in *proto.GetProfitRequest, opts ...grpc.CallOption) (*proto.GetProfitResponse, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	var r0 *proto.GetProfitResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *proto.GetProfitRequest, ...grpc.CallOption) *proto.GetProfitResponse); ok {
-		r0 = rf(ctx, in, opts...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*proto.GetProfitResponse)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *proto.GetProfitRequest, ...grpc.CallOption) error); ok {
 		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)

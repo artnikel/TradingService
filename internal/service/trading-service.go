@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -11,7 +12,9 @@ import (
 	"github.com/artnikel/TradingService/internal/config"
 	"github.com/artnikel/TradingService/internal/model"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 )
 
 // PriceRepository is interface with method for reading prices
@@ -44,67 +47,106 @@ func NewTradingService(priceRep PriceRepository, bRep BalanceRepository, cfg con
 		bRep:     bRep,
 		chmanager: &model.ChanManager{
 			SubscribersShares: make(map[uuid.UUID]map[string]chan model.Share),
-			PricesMap:         make(map[string]decimal.Decimal)},
+			PricesMap:         make(map[string]decimal.Decimal),
+			Positions:         make(map[uuid.UUID]model.Deal)},
 		cfg: cfg,
 	}
 }
 
-// GetProfit contains 2 options of strategy - long and short. He`s added and closed position, and returns profit.
-func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error) {
+func (ts *TradingService) WaitForNotification(ctx context.Context, l *pq.Listener) {
+	var valueToParse = struct {
+		Action     string `json:"action"`
+		model.Deal `json:"data"`
+	}{}
+	for {
+		notification := <-l.Notify
+
+		err := json.Unmarshal([]byte(notification.Extra), &valueToParse)
+		logrus.Info(notification)
+		if err != nil {
+			logrus.WithField("payload", notification.Extra).Errorf("TradingService-WaitForNotification: %v", err)
+			continue
+		}
+		if valueToParse.Action == "INSERT" {
+			ts.chmanager.Positions[valueToParse.DealID] = valueToParse.Deal
+		}
+	}
+}
+
+func (ts *TradingService) CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error {
 	if _, ok := ts.chmanager.SubscribersShares[deal.ProfileID]; !ok {
 		ts.chmanager.SubscribersShares[deal.ProfileID] = make(map[string]chan model.Share)
 		ts.chmanager.SubscribersShares[deal.ProfileID][deal.Company] = make(chan model.Share)
 	}
 	balanceMoney, err := ts.bRep.GetBalance(ctx, deal.ProfileID)
 	if err != nil {
-		return decimal.Zero, fmt.Errorf("TradingService-GetProfit-GetBalance: error:%w", err)
+		return fmt.Errorf("TradingService-CreatePosition-GetBalance: error:%w", err)
 	}
 	balance := &model.Balance{ProfileID: deal.ProfileID}
-	takenPurchasePrice := false
 	stopLoss, takeProfit := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
 	if strategy == "short" {
 		stopLoss, takeProfit = takeProfit, stopLoss
 	}
-	defer func() {
-		if deal.EndDealTime.IsZero() && takenPurchasePrice {
-			balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount)
-			_, err := ts.bRep.BalanceOperation(ctx, balance)
-			if err != nil {
-				log.Fatalf("TradingService-GetProfit-BalanceOperation: error:%v", err)
-			}
+	select {
+	case share := <-ts.chmanager.SubscribersShares[deal.ProfileID][deal.Company]:
+		deal.PurchasePrice = share.Price
+		if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
+			return fmt.Errorf("TradingService-CreatePosition: purchase price out of takeprofit/stoploss")
 		}
-	}()
+		if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
+			return fmt.Errorf("TradingService-CreatePosition: not enough money")
+		}
+		err := ts.priceRep.AddPosition(ctx, strategy, deal)
+		if err != nil {
+			return fmt.Errorf("TradingService-CreatePosition-AddPosition: error:%w", err)
+		}
+		balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
+		_, err = ts.bRep.BalanceOperation(ctx, balance)
+		if err != nil {
+			return fmt.Errorf("TradingService-CreatePosition-BalanceOperation: error:%w", err)
+		}
+		go func() {
+			err = ts.GetProfit(ctx, strategy, deal)
+			if err != nil {
+				log.Fatalf("TradingService-CreatePosition-GetProfit: error:%v", err)
+			}
+		}()
+		break
+	case <-ctx.Done():
+		return nil
+	}
+	return nil
+}
+
+// GetProfit contains 2 options of strategy - long and short. He`s added and closed position, and returns profit.
+func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *model.Deal) error {
+	if _, ok := ts.chmanager.SubscribersShares[deal.ProfileID]; !ok {
+		ts.chmanager.SubscribersShares[deal.ProfileID] = make(map[string]chan model.Share)
+		ts.chmanager.SubscribersShares[deal.ProfileID][deal.Company] = make(chan model.Share)
+	}
+	stopLoss, takeProfit := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
+	if strategy == "short" {
+		stopLoss, takeProfit = takeProfit, stopLoss
+	}
 	for {
 		select {
 		case share := <-ts.chmanager.SubscribersShares[deal.ProfileID][deal.Company]:
-			if !takenPurchasePrice {
-				takenPurchasePrice = true
-				deal.PurchasePrice = share.Price
-				if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
-					return decimal.Zero, fmt.Errorf("TradingService-GetProfit: purchase price out of takeprofit/stoploss")
-				}
-				if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
-					return decimal.Zero, fmt.Errorf("TradingService-GetProfit: not enough money")
-				}
-				err := ts.priceRep.AddPosition(ctx, strategy, deal)
-				if err != nil {
-					return decimal.Zero, fmt.Errorf("TradingService-GetProfit-AddPosition: error:%w", err)
-				}
-				balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
-				_, err = ts.bRep.BalanceOperation(ctx, balance)
-				if err != nil {
-					return decimal.Zero, fmt.Errorf("TradingService-GetProfit-BalanceOperation: error:%w", err)
-				}
+			if strategy == "long" {
+				fmt.Println("Deal ID: ", deal.DealID, " Profit :", share.Price.Mul(deal.SharesCount).Sub(deal.PurchasePrice.Mul(deal.SharesCount)))
+			}
+			if strategy == "short" {
+				fmt.Println("Deal ID: ", deal.DealID, " Profit :", deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Price.Mul(deal.SharesCount)))
 			}
 			if stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount)) || share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
 				profit, err := ts.ClosePosition(ctx, deal.DealID, deal.ProfileID)
 				if err != nil {
-					return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
+					return fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
 				}
-				return profit, nil
+				fmt.Println("Position closed with profit: ", profit)
+				return nil
 			}
 		case <-ctx.Done():
-			return decimal.Zero, nil
+			return nil
 		}
 	}
 }
@@ -113,10 +155,15 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 func (ts *TradingService) ClosePosition(ctx context.Context, dealid, profileid uuid.UUID) (decimal.Decimal, error) {
 	var balance model.Balance
 	balance.ProfileID = profileid
-	deal, err := ts.priceRep.GetPositionInfoByDealID(ctx, dealid)
-	if err != nil {
-		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition-GetPositionInfoByDealID: error:%w", err)
+	//var deal *model.Deal
+	// deal, err := ts.priceRep.GetPositionInfoByDealID(ctx, dealid)
+	// if err != nil {
+	// 	return decimal.Zero, fmt.Errorf("TradingService-ClosePosition-GetPositionInfoByDealID: error:%w", err)
+	// }
+	if _, ok := ts.chmanager.Positions[dealid]; !ok {
+		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: key of map Positions is not exist")
 	}
+	deal := ts.chmanager.Positions[dealid]
 	if _, ok := ts.chmanager.SubscribersShares[profileid]; !ok {
 		ts.chmanager.SubscribersShares[profileid] = make(map[string]chan model.Share)
 		ts.chmanager.SubscribersShares[profileid][deal.Company] = make(chan model.Share)
@@ -134,7 +181,7 @@ func (ts *TradingService) ClosePosition(ctx context.Context, dealid, profileid u
 			if deal.StopLoss.Cmp(deal.TakeProfit) == 1 {
 				deal.Profit = deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Price.Mul(deal.SharesCount))
 			}
-			err = ts.priceRep.ClosePosition(ctx, &deal)
+			err := ts.priceRep.ClosePosition(ctx, &deal)
 			if err != nil {
 				return decimal.Zero, fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
 			}

@@ -17,7 +17,7 @@ import (
 
 // TradingService is an interface that contains methods of service for trade
 type TradingService interface {
-	GetProfit(ctx context.Context, strategy string, deal *model.Deal) (decimal.Decimal, error)
+	CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error
 	BalanceOperation(ctx context.Context, balance *model.Balance) (float64, error)
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
 	ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error)
@@ -38,11 +38,11 @@ func NewEntityDeal(srvTrading TradingService, validate *validator.Validate) *Ent
 }
 
 // GetProfit is method that calls method of Trading Service
-func (d *EntityDeal) GetProfit(ctx context.Context, req *proto.GetProfitRequest) (*proto.GetProfitResponse, error) {
+func (d *EntityDeal) CreatePosition(ctx context.Context, req *proto.CreatePositionRequest) (*proto.CreatePositionResponse, error) {
 	profileID, err := uuid.Parse(req.Deal.ProfileID)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.GetProfitResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to parse profile id")
+		return &proto.CreatePositionResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to parse profile id")
 	}
 	createdDeal := &model.Deal{
 		DealID:      uuid.New(),
@@ -56,14 +56,14 @@ func (d *EntityDeal) GetProfit(ctx context.Context, req *proto.GetProfitRequest)
 	err = d.validate.StructCtx(ctx, createdDeal)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.GetProfitResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to validate struct deal")
+		return &proto.CreatePositionResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to validate struct deal")
 	}
-	profit, err := d.srvTrading.GetProfit(ctx, req.Strategy, createdDeal)
+	err = d.srvTrading.CreatePosition(ctx, req.Strategy, createdDeal)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.GetProfitResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to get profit")
+		return &proto.CreatePositionResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to get profit")
 	}
-	return &proto.GetProfitResponse{Profit: profit.InexactFloat64()}, nil
+	return &proto.CreatePositionResponse{}, nil
 }
 
 // ClosePosition is method that calls method of Trading Service

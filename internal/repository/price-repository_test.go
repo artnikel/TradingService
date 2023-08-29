@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artnikel/TradingService/internal/config"
 	"github.com/artnikel/TradingService/internal/model"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -33,6 +34,7 @@ var (
 		Profit:      decimal.NewFromFloat(42.2),
 		EndDealTime: time.Now().UTC(),
 	}
+	cfg config.Variables
 )
 
 func SetupTestPostgres() (*pgxpool.Pool, func(), error) {
@@ -83,7 +85,7 @@ func TestMain(m *testing.M) {
 		cleanupPostgres()
 		os.Exit(1)
 	}
-	pg = NewPriceRepository(nil, dbpool)
+	pg = NewPriceRepository(nil, dbpool, cfg)
 	exitVal := m.Run()
 	cleanupPostgres()
 	os.Exit(exitVal)

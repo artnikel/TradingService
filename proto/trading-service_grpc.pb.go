@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TradingServiceClient interface {
-	GetProfit(ctx context.Context, in *GetProfitRequest, opts ...grpc.CallOption) (*GetProfitResponse, error)
+	CreatePosition(ctx context.Context, in *CreatePositionRequest, opts ...grpc.CallOption) (*CreatePositionResponse, error)
 	ClosePosition(ctx context.Context, in *ClosePositionRequest, opts ...grpc.CallOption) (*ClosePositionResponse, error)
 	GetUnclosedPositions(ctx context.Context, in *GetUnclosedPositionsRequest, opts ...grpc.CallOption) (*GetUnclosedPositionsResponse, error)
 	GetPrices(ctx context.Context, in *GetPricesRequest, opts ...grpc.CallOption) (*GetPricesResponse, error)
@@ -32,9 +32,9 @@ func NewTradingServiceClient(cc grpc.ClientConnInterface) TradingServiceClient {
 	return &tradingServiceClient{cc}
 }
 
-func (c *tradingServiceClient) GetProfit(ctx context.Context, in *GetProfitRequest, opts ...grpc.CallOption) (*GetProfitResponse, error) {
-	out := new(GetProfitResponse)
-	err := c.cc.Invoke(ctx, "/TradingService/GetProfit", in, out, opts...)
+func (c *tradingServiceClient) CreatePosition(ctx context.Context, in *CreatePositionRequest, opts ...grpc.CallOption) (*CreatePositionResponse, error) {
+	out := new(CreatePositionResponse)
+	err := c.cc.Invoke(ctx, "/TradingService/CreatePosition", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (c *tradingServiceClient) GetPrices(ctx context.Context, in *GetPricesReque
 // All implementations must embed UnimplementedTradingServiceServer
 // for forward compatibility
 type TradingServiceServer interface {
-	GetProfit(context.Context, *GetProfitRequest) (*GetProfitResponse, error)
+	CreatePosition(context.Context, *CreatePositionRequest) (*CreatePositionResponse, error)
 	ClosePosition(context.Context, *ClosePositionRequest) (*ClosePositionResponse, error)
 	GetUnclosedPositions(context.Context, *GetUnclosedPositionsRequest) (*GetUnclosedPositionsResponse, error)
 	GetPrices(context.Context, *GetPricesRequest) (*GetPricesResponse, error)
@@ -83,8 +83,8 @@ type TradingServiceServer interface {
 type UnimplementedTradingServiceServer struct {
 }
 
-func (UnimplementedTradingServiceServer) GetProfit(context.Context, *GetProfitRequest) (*GetProfitResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetProfit not implemented")
+func (UnimplementedTradingServiceServer) CreatePosition(context.Context, *CreatePositionRequest) (*CreatePositionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatePosition not implemented")
 }
 func (UnimplementedTradingServiceServer) ClosePosition(context.Context, *ClosePositionRequest) (*ClosePositionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClosePosition not implemented")
@@ -108,20 +108,20 @@ func RegisterTradingServiceServer(s grpc.ServiceRegistrar, srv TradingServiceSer
 	s.RegisterService(&TradingService_ServiceDesc, srv)
 }
 
-func _TradingService_GetProfit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetProfitRequest)
+func _TradingService_CreatePosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePositionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingServiceServer).GetProfit(ctx, in)
+		return srv.(TradingServiceServer).CreatePosition(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TradingService/GetProfit",
+		FullMethod: "/TradingService/CreatePosition",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingServiceServer).GetProfit(ctx, req.(*GetProfitRequest))
+		return srv.(TradingServiceServer).CreatePosition(ctx, req.(*CreatePositionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -188,8 +188,8 @@ var TradingService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TradingServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetProfit",
-			Handler:    _TradingService_GetProfit_Handler,
+			MethodName: "CreatePosition",
+			Handler:    _TradingService_CreatePosition_Handler,
 		},
 		{
 			MethodName: "ClosePosition",

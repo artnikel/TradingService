@@ -3,8 +3,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"time"
 
 	bproto "github.com/artnikel/BalanceService/proto"
 	pproto "github.com/artnikel/PriceService/proto"
@@ -15,6 +17,7 @@ import (
 	"github.com/artnikel/TradingService/proto"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -63,12 +66,27 @@ func main() {
 	defer dbpool.Close()
 	pclient := pproto.NewPriceServiceClient(pconn)
 	bclient := bproto.NewBalanceServiceClient(bconn)
-	prep := repository.NewPriceRepository(pclient, dbpool)
+	prep := repository.NewPriceRepository(pclient, dbpool, *cfg)
 	brep := repository.NewBalanceRepository(bclient)
 	tsrv := service.NewTradingService(prep, brep, *cfg)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go tsrv.Subscribe(ctx)
+
+	reportProblem := func(ev pq.ListenerEventType, err error) {
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	}
+	listener := pq.NewListener(cfg.PostgresConnTrading+"?sslmode=disable", 10*time.Second, time.Minute, reportProblem)
+	err = listener.Listen("events")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Start monitoring PostgreSQL...")
+
+	go tsrv.WaitForNotification(ctx, listener)
+
 	hndl := handler.NewEntityDeal(tsrv, v)
 	lis, err := net.Listen("tcp", "localhost:8088")
 	if err != nil {

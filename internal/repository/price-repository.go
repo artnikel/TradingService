@@ -4,13 +4,11 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	pproto "github.com/artnikel/PriceService/proto"
 	"github.com/artnikel/TradingService/internal/config"
 	"github.com/artnikel/TradingService/internal/model"
-	"github.com/caarlos0/env"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
@@ -20,23 +18,21 @@ import (
 type PriceRepository struct {
 	pool   *pgxpool.Pool
 	client pproto.PriceServiceClient
+	cfg    config.Variables
 }
 
 // NewPriceRepository creates and returns a new instance of PriceRepository, using the provided proto.PriceServiceClient.
-func NewPriceRepository(client pproto.PriceServiceClient, pool *pgxpool.Pool) *PriceRepository {
+func NewPriceRepository(client pproto.PriceServiceClient, pool *pgxpool.Pool, cfg config.Variables) *PriceRepository {
 	return &PriceRepository{
 		client: client,
 		pool:   pool,
+		cfg:    cfg,
 	}
 }
 
 // Subscribe call a method of PriceService.
 func (p *PriceRepository) Subscribe(ctx context.Context, manager chan model.Share) error {
-	var cfg config.Variables
-	if err := env.Parse(&cfg); err != nil {
-		log.Fatal("could not parse config: ", err)
-	}
-	companyShares := strings.Split(cfg.CompanyShares, ",")
+	companyShares := strings.Split(p.cfg.CompanyShares, ",")
 	stream, err := p.client.Subscribe(ctx, &pproto.SubscribeRequest{
 		Uuid:           uuid.NewString(),
 		SelectedShares: companyShares,
