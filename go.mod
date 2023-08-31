@@ -7,6 +7,7 @@ require (
 	github.com/artnikel/PriceService v0.0.0-20230823115809-6634c751d0eb
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/google/uuid v1.3.0
+	github.com/lib/pq v1.10.9
 	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.8.4
 )
@@ -29,7 +30,6 @@ require (
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.1.8 // indirect

@@ -16,20 +16,6 @@ type PriceRepository struct {
 	mock.Mock
 }
 
-// AddPosition provides a mock function with given fields: ctx, strategy, deal
-func (_m *PriceRepository) AddPosition(ctx context.Context, strategy string, deal *model.Deal) error {
-	ret := _m.Called(ctx, strategy, deal)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Deal) error); ok {
-		r0 = rf(ctx, strategy, deal)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // ClosePosition provides a mock function with given fields: ctx, deal
 func (_m *PriceRepository) ClosePosition(ctx context.Context, deal *model.Deal) error {
 	ret := _m.Called(ctx, deal)
@@ -44,25 +30,18 @@ func (_m *PriceRepository) ClosePosition(ctx context.Context, deal *model.Deal) 
 	return r0
 }
 
-// GetPositionInfoByDealID provides a mock function with given fields: ctx, dealid
-func (_m *PriceRepository) GetPositionInfoByDealID(ctx context.Context, dealid uuid.UUID) (model.Deal, error) {
-	ret := _m.Called(ctx, dealid)
+// CreatePosition provides a mock function with given fields: ctx, strategy, deal
+func (_m *PriceRepository) CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error {
+	ret := _m.Called(ctx, strategy, deal)
 
-	var r0 model.Deal
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) model.Deal); ok {
-		r0 = rf(ctx, dealid)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Deal) error); ok {
+		r0 = rf(ctx, strategy, deal)
 	} else {
-		r0 = ret.Get(0).(model.Deal)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, dealid)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // GetUnclosedPositions provides a mock function with given fields: ctx, profileid
@@ -81,6 +60,29 @@ func (_m *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid u
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, profileid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetUnclosedPositionsForAll provides a mock function with given fields: ctx
+func (_m *PriceRepository) GetUnclosedPositionsForAll(ctx context.Context) ([]*model.Deal, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*model.Deal
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.Deal); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Deal)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

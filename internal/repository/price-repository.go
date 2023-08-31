@@ -58,8 +58,8 @@ func (p *PriceRepository) Subscribe(ctx context.Context, manager chan model.Shar
 	}
 }
 
-// AddPosition created in database new row with deal
-func (p *PriceRepository) AddPosition(ctx context.Context, strategy string, deal *model.Deal) error {
+// CreatePosition created in database new row with deal
+func (p *PriceRepository) CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error {
 	if strategy == "short" {
 		deal.Profit = deal.Profit.Neg()
 	}
@@ -84,17 +84,6 @@ func (p *PriceRepository) ClosePosition(ctx context.Context, deal *model.Deal) e
 	return nil
 }
 
-// GetPositionInfoByDealID returns info about positions by id for closing positions
-func (p *PriceRepository) GetPositionInfoByDealID(ctx context.Context, dealid uuid.UUID) (model.Deal, error) {
-	var deal model.Deal
-	err := p.pool.QueryRow(ctx, "SELECT company, purchaseprice, sharescount, stoploss, takeprofit FROM deal WHERE dealid = $1", dealid).
-		Scan(&deal.Company, &deal.PurchasePrice, &deal.SharesCount, &deal.StopLoss, &deal.TakeProfit)
-	if err != nil {
-		return model.Deal{}, fmt.Errorf("PriceRepository-GetPositionInfoByDealID: error in method p.pool.QuerryRow(): %w", err)
-	}
-	return deal, nil
-}
-
 // GetUnclosedPositions returns info about positions which not closed
 func (p *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
 	var deals []*model.Deal
@@ -114,6 +103,29 @@ func (p *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid uu
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("PriceRepository-GetUnclosedPositions error iterating rows: %w", err)
+	}
+	return deals, nil
+}
+
+// GetUnclosedPositionsForAll returns info about positions which not closed
+func (p *PriceRepository) GetUnclosedPositionsForAll(ctx context.Context) ([]*model.Deal, error) {
+	var deals []*model.Deal
+	rows, err := p.pool.Query(ctx, `SELECT dealid, profileid, company, purchaseprice, sharescount, takeprofit, stoploss, dealtime
+	FROM deal WHERE enddealtime IS NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("PriceRepository-GetUnclosedPositionsForAll: error in method p.pool.Query(): %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var deal model.Deal
+		err := rows.Scan(&deal.DealID, &deal.ProfileID, &deal.Company, &deal.PurchasePrice, &deal.SharesCount, &deal.TakeProfit, &deal.StopLoss, &deal.DealTime)
+		if err != nil {
+			return nil, fmt.Errorf("PriceRepository-GetUnclosedPositionsForAll error in method rows.Scan(): %w", err)
+		}
+		deals = append(deals, &deal)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("PriceRepository-GetUnclosedPositionsForAll error iterating rows: %w", err)
 	}
 	return deals, nil
 }

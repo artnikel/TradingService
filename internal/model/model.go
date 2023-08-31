@@ -24,8 +24,8 @@ type Deal struct {
 	PurchasePrice decimal.Decimal `json:"purchaseprice"`
 	StopLoss      decimal.Decimal `json:"stoploss" validate:"required"`
 	TakeProfit    decimal.Decimal `json:"takeprofit" validate:"required"`
-	DealTime      time.Time       `json:"dealtime"`
-	EndDealTime   time.Time       `json:"enddealtime"`
+	DealTime      time.Time       `json:"-"`
+	EndDealTime   time.Time       `json:"-"`
 	Profit        decimal.Decimal `json:"profit"`
 }
 

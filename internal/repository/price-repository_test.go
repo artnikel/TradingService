@@ -93,7 +93,7 @@ func TestMain(m *testing.M) {
 
 func TestAddGetPosition(t *testing.T) {
 	var tempDeal *model.Deal
-	err := pg.AddPosition(context.Background(), strategy, testDeal)
+	err := pg.CreatePosition(context.Background(), strategy, testDeal)
 	require.NoError(t, err)
 	unclosedDeals, err := pg.GetUnclosedPositions(context.Background(), testDeal.ProfileID)
 	require.NoError(t, err)
@@ -120,7 +120,7 @@ func TestAddGetPosition(t *testing.T) {
 func TestClosePosition(t *testing.T) {
 	testDeal.DealID = uuid.New()
 	testDeal.ProfileID = uuid.New()
-	err := pg.AddPosition(context.Background(), strategy, testDeal)
+	err := pg.CreatePosition(context.Background(), strategy, testDeal)
 	require.NoError(t, err)
 	closeDeal.DealID = testDeal.DealID
 	err = pg.ClosePosition(context.Background(), closeDeal)
@@ -132,7 +132,7 @@ func TestClosePosition(t *testing.T) {
 
 func TestGetUnclosedPositions(t *testing.T) {
 	testDeal.DealID = uuid.New()
-	err := pg.AddPosition(context.Background(), strategy, testDeal)
+	err := pg.CreatePosition(context.Background(), strategy, testDeal)
 	require.NoError(t, err)
 	unclosedDeals, err := pg.GetUnclosedPositions(context.Background(), testDeal.ProfileID)
 	require.NoError(t, err)

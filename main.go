@@ -56,23 +56,28 @@ func main() {
 	}()
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatal("Could not parse config: ", err)
+		log.Fatalf("Could not parse config: err: %v", err)
 	}
 	v := validator.New()
 	dbpool, errPool := connectPostgres(cfg.PostgresConnTrading)
 	if errPool != nil {
-		log.Fatal("Could not construct the pool: ", errPool)
+		log.Fatalf("Could not construct the pool: err: %v", errPool)
 	}
 	defer dbpool.Close()
 	pclient := pproto.NewPriceServiceClient(pconn)
 	bclient := bproto.NewBalanceServiceClient(bconn)
 	prep := repository.NewPriceRepository(pclient, dbpool, *cfg)
 	brep := repository.NewBalanceRepository(bclient)
-	tsrv := service.NewTradingService(prep, brep, *cfg)
+	tsrv := service.NewTradingService(prep, brep, *cfg, )
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go tsrv.Subscribe(ctx)
-
+	go func(){
+		err := tsrv.BackupUnclosedPositions(ctx)
+		if err != nil {
+			log.Fatalf("Error in method BackupUnclosedPositions: err: %v", err)
+		}
+	}() 
 	reportProblem := func(ev pq.ListenerEventType, err error) {
 		if err != nil {
 			fmt.Println(err.Error())
@@ -81,22 +86,22 @@ func main() {
 	listener := pq.NewListener(cfg.PostgresConnTrading+"?sslmode=disable", 10*time.Second, time.Minute, reportProblem)
 	err = listener.Listen("events")
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to listen events: %v", err)
 	}
-	fmt.Println("Start monitoring PostgreSQL...")
+	fmt.Println("Start monitoring Positions...")
 
 	go tsrv.WaitForNotification(ctx, listener)
 
 	hndl := handler.NewEntityDeal(tsrv, v)
 	lis, err := net.Listen("tcp", "localhost:8088")
 	if err != nil {
-		log.Fatalf("Cannot create listener: %s", err)
+		log.Fatalf("Cannot create listener: %v", err)
 	}
 	grpcServer := grpc.NewServer()
 	proto.RegisterTradingServiceServer(grpcServer, hndl)
 	err = grpcServer.Serve(lis)
 	if err != nil {
-		log.Fatalf("Failed to serve listener: %s", err)
+		log.Fatalf("Failed to serve listener: %v", err)
 	}
 
 }

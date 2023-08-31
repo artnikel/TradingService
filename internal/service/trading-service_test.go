@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/artnikel/TradingService/internal/model"
 	"github.com/artnikel/TradingService/internal/service/mocks"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -20,14 +22,14 @@ var (
 		ProfileID: uuid.New(),
 		Operation: decimal.NewFromFloat(100.9),
 	}
-	testStrategy = "short"
+	testStrategy = "long"
 	testDeal     = &model.Deal{
 		DealID:        uuid.New(),
 		SharesCount:   decimal.NewFromFloat(1.5),
 		ProfileID:     testBalance.ProfileID,
 		Company:       "Apple",
 		PurchasePrice: decimal.NewFromFloat(1350),
-		StopLoss:      decimal.NewFromFloat(1500),
+		StopLoss:      decimal.NewFromFloat(100),
 		TakeProfit:    decimal.NewFromFloat(1000),
 		DealTime:      time.Now().UTC(),
 	}
@@ -52,6 +54,55 @@ func TestGetBalanceAndOperation(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, money, testBalance.Operation.InexactFloat64())
 	rep.AssertExpectations(t)
+}
+
+func TestCreatePosition(t *testing.T) {
+	tdeal := &model.Deal{
+		Company:     "Apple",
+		StopLoss:    decimal.NewFromFloat(100),
+		TakeProfit:  decimal.NewFromFloat(1000),
+		ProfileID:   uuid.New(),
+		SharesCount: decimal.NewFromFloat(1),
+	}
+	brep := new(mocks.BalanceRepository)
+	trep := new(mocks.PriceRepository)
+	srv := NewTradingService(trep, brep, cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	db, err := sql.Open("postgres", cfg.PostgresConnTrading+" sslmode=disable")
+	require.NoError(t, err)
+	defer db.Close()
+
+	tx, err := db.Begin()
+	require.NoError(t, err)
+	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
+	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(nil).Once()
+	trep.On("Subscribe", mock.Anything, mock.AnythingOfType("chan model.Share")).Return(nil)
+	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
+	reportProblem := func(ev pq.ListenerEventType, err error) {
+		if err != nil {
+			t.Errorf("error: %v", err.Error())
+		}
+	}
+	listener := pq.NewListener(cfg.PostgresConnTrading+"?sslmode=disable", 5*time.Second, time.Minute, reportProblem)
+
+	go func() {
+		err := listener.Listen("events")
+		if err != nil {
+			t.Errorf("Failed to listen events: %s", err)
+		}
+		srv.Subscribe(ctx)
+		srv.WaitForNotification(ctx, listener)
+	}()
+	err = srv.CreatePosition(ctx, testStrategy, tdeal)
+	require.NoError(t, err)
+
+	err = tx.Rollback() 
+	require.NoError(t, err)
+
+	brep.AssertExpectations(t)
+	trep.AssertExpectations(t)
 }
 
 func TestGetProfit(t *testing.T) {
