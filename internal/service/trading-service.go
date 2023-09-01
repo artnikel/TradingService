@@ -170,6 +170,7 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 		case share := <-ts.chmanager.SubscribersShares[deal.ProfileID][deal.Company]:
 			ts.chmanager.Mu.RLock()
 			if _, ok := ts.chmanager.Positions[deal.DealID]; !ok {
+				ts.chmanager.Mu.RUnlock()
 				break
 			}
 			ts.chmanager.Mu.RUnlock()
@@ -181,7 +182,7 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 				fmt.Println("Deal ID: ", deal.DealID, " Profit :", deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Price.Mul(deal.SharesCount)))
 			}
 			if stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount)) || share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
-				profit, err := ts.ClosePosition(ctx, deal.DealID, deal.ProfileID)
+				profit, err := ts.ClosePosition(ctx, deal.DealID, deal.ProfileID, share.Price)
 				if err != nil {
 					return fmt.Errorf("TradingService-GetProfit-ClosePosition: error:%w", err)
 				}
@@ -195,7 +196,7 @@ func (ts *TradingService) GetProfit(ctx context.Context, strategy string, deal *
 }
 
 // ClosePosition is a method that calls method of Repository and returns profit
-func (ts *TradingService) ClosePosition(ctx context.Context, dealid, profileid uuid.UUID) (decimal.Decimal, error) {
+func (ts *TradingService) ClosePosition(ctx context.Context, dealid, profileid uuid.UUID, sharePrice decimal.Decimal) (decimal.Decimal, error) {
 	var balance model.Balance
 	balance.ProfileID = profileid
 
@@ -212,29 +213,38 @@ func (ts *TradingService) ClosePosition(ctx context.Context, dealid, profileid u
 	}
 	ts.chmanager.Mu.RUnlock()
 
+	deal.EndDealTime = time.Now().UTC()
+	deal.DealID = dealid
+	if deal.TakeProfit.Cmp(deal.StopLoss) == 1 {
+		deal.Profit = sharePrice.Mul(deal.SharesCount).Sub(deal.PurchasePrice.Mul(deal.SharesCount))
+	}
+	if deal.StopLoss.Cmp(deal.TakeProfit) == 1 {
+		deal.Profit = deal.PurchasePrice.Mul(deal.SharesCount).Sub(sharePrice.Mul(deal.SharesCount))
+	}
+	err := ts.priceRep.ClosePosition(ctx, &deal)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: error:%w", err)
+	}
+	balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
+	_, err = ts.bRep.BalanceOperation(ctx, &balance)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition-BalanceOperation: error:%w", err)
+	}
+	return deal.Profit, nil
+}
+
+func (ts *TradingService) ClosePositionManually(ctx context.Context, dealid, profileid uuid.UUID) (decimal.Decimal, error) {
+	deal := ts.chmanager.Positions[dealid]
 	for {
 		select {
 		case <-ctx.Done():
 			return decimal.Zero, nil
 		case share := <-ts.chmanager.SubscribersShares[profileid][deal.Company]:
-			deal.EndDealTime = time.Now().UTC()
-			deal.DealID = dealid
-			if deal.TakeProfit.Cmp(deal.StopLoss) == 1 {
-				deal.Profit = share.Price.Mul(deal.SharesCount).Sub(deal.PurchasePrice.Mul(deal.SharesCount))
-			}
-			if deal.StopLoss.Cmp(deal.TakeProfit) == 1 {
-				deal.Profit = deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Price.Mul(deal.SharesCount))
-			}
-			err := ts.priceRep.ClosePosition(ctx, &deal)
+			profit, err := ts.ClosePosition(ctx, dealid, profileid, share.Price)
 			if err != nil {
-				return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: error:%w", err)
+				return decimal.Zero, fmt.Errorf("TradingService-ClosePositionManually-ClosePosition: error: %w", err)
 			}
-			balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
-			_, err = ts.bRep.BalanceOperation(ctx, &balance)
-			if err != nil {
-				return decimal.Zero, fmt.Errorf("TradingService-ClosePosition-BalanceOperation: error:%w", err)
-			}
-			return deal.Profit, nil
+			return profit, nil
 		}
 	}
 }
@@ -257,11 +267,9 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 			ts.chmanager.Mu.Lock()
 			ts.chmanager.PricesMap[share.Company] = share.Price
 			ts.chmanager.Mu.Unlock()
-			for subID, subShares := range ts.chmanager.SubscribersShares {
-				for subCompany := range subShares {
-					if share.Company == subCompany {
-						ts.chmanager.SubscribersShares[subID][subCompany] <- share
-					}
+			for _, subShares := range ts.chmanager.SubscribersShares {
+				if v, ok := subShares[share.Company]; ok {
+					v <- share
 				}
 			}
 		default:

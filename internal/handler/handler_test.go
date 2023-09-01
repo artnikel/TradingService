@@ -55,11 +55,11 @@ func TestCreatePosition(t *testing.T) {
 	srv.AssertExpectations(t)
 }
 
-func TestClosePosition(t *testing.T) {
+func TestClosePositionManually(t *testing.T) {
 	srv := new(mocks.TradingService)
 	hndl := NewEntityDeal(srv, v)
-	srv.On("ClosePosition", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("uuid.UUID")).Return(testDeal.Profit, nil).Once()
-	_, err := hndl.ClosePosition(context.Background(), &proto.ClosePositionRequest{
+	srv.On("ClosePositionManually", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("uuid.UUID")).Return(testDeal.Profit, nil).Once()
+	_, err := hndl.ClosePositionManually(context.Background(), &proto.ClosePositionManuallyRequest{
 		Dealid:    testDeal.DealID.String(),
 		Profileid: testDeal.ProfileID.String(),
 	})

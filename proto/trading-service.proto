@@ -24,7 +24,7 @@ message TradingShare {
 
 service TradingService {
     rpc CreatePosition(CreatePositionRequest) returns (CreatePositionResponse);
-    rpc ClosePosition(ClosePositionRequest) returns (ClosePositionResponse);
+    rpc ClosePositionManually(ClosePositionManuallyRequest) returns (ClosePositionManuallyResponse);
     rpc GetUnclosedPositions(GetUnclosedPositionsRequest) returns (GetUnclosedPositionsResponse);
     rpc GetPrices(GetPricesRequest) returns (GetPricesResponse);
 }
@@ -36,12 +36,12 @@ message CreatePositionRequest{
 
 message CreatePositionResponse{}
 
-message ClosePositionRequest{
+message ClosePositionManuallyRequest{
     string dealid = 1;
     string profileid = 2;
 }
 
-message ClosePositionResponse{
+message ClosePositionManuallyResponse{
     double profit = 1;
 }
 

@@ -20,7 +20,7 @@ type TradingService interface {
 	CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error
 	BalanceOperation(ctx context.Context, balance *model.Balance) (float64, error)
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
-	ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error)
+	ClosePositionManually(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error)
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
 	GetPrices() ([]model.Share, error)
 }
@@ -66,34 +66,34 @@ func (d *EntityDeal) CreatePosition(ctx context.Context, req *proto.CreatePositi
 	return &proto.CreatePositionResponse{}, nil
 }
 
-// ClosePosition is method that calls method of Trading Service
-func (d *EntityDeal) ClosePosition(ctx context.Context, req *proto.ClosePositionRequest) (*proto.ClosePositionResponse, error) {
+// ClosePositionManually is method that calls method of Trading Service
+func (d *EntityDeal) ClosePositionManually(ctx context.Context, req *proto.ClosePositionManuallyRequest) (*proto.ClosePositionManuallyResponse, error) {
 	dealID, err := uuid.Parse(req.Dealid)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to parse id")
+		return &proto.ClosePositionManuallyResponse{}, fmt.Errorf("EntityDeal-ClosePositionManually: failed to parse id")
 	}
 	err = d.validate.VarCtx(ctx, dealID, "required")
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to validate deal id")
+		return &proto.ClosePositionManuallyResponse{}, fmt.Errorf("EntityDeal-ClosePositionManually: failed to validate deal id")
 	}
 	profileID, err := uuid.Parse(req.Profileid)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to parse id")
+		return &proto.ClosePositionManuallyResponse{}, fmt.Errorf("EntityDeal-ClosePositionManually: failed to parse id")
 	}
 	err = d.validate.VarCtx(ctx, profileID, "required")
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed to validate deal id")
+		return &proto.ClosePositionManuallyResponse{}, fmt.Errorf("EntityDeal-ClosePositionManually: failed to validate deal id")
 	}
-	profit, err := d.srvTrading.ClosePosition(ctx, dealID, profileID)
+	profit, err := d.srvTrading.ClosePositionManually(ctx, dealID, profileID)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.ClosePositionResponse{}, fmt.Errorf("EntityDeal-ClosePosition: failed run close position")
+		return &proto.ClosePositionManuallyResponse{}, fmt.Errorf("EntityDeal-ClosePositionManually: failed run close position")
 	}
-	return &proto.ClosePositionResponse{
+	return &proto.ClosePositionManuallyResponse{
 		Profit: profit.InexactFloat64(),
 	}, nil
 }

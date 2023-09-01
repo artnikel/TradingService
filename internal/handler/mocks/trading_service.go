@@ -40,8 +40,8 @@ func (_m *TradingService) BalanceOperation(ctx context.Context, balance *model.B
 	return r0, r1
 }
 
-// ClosePosition provides a mock function with given fields: ctx, dealid, profileid
-func (_m *TradingService) ClosePosition(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error) {
+// ClosePositionManually provides a mock function with given fields: ctx, dealid, profileid
+func (_m *TradingService) ClosePositionManually(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error) {
 	ret := _m.Called(ctx, dealid, profileid)
 
 	var r0 decimal.Decimal

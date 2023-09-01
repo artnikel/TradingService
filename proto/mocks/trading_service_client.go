@@ -17,8 +17,8 @@ type TradingServiceClient struct {
 	mock.Mock
 }
 
-// ClosePosition provides a mock function with given fields: ctx, in, opts
-func (_m *TradingServiceClient) ClosePosition(ctx context.Context, in *proto.ClosePositionRequest, opts ...grpc.CallOption) (*proto.ClosePositionResponse, error) {
+// ClosePositionManually provides a mock function with given fields: ctx, in, opts
+func (_m *TradingServiceClient) ClosePositionManually(ctx context.Context, in *proto.ClosePositionManuallyRequest, opts ...grpc.CallOption) (*proto.ClosePositionManuallyResponse, error) {
 	_va := make([]interface{}, len(opts))
 	for _i := range opts {
 		_va[_i] = opts[_i]
@@ -28,17 +28,17 @@ func (_m *TradingServiceClient) ClosePosition(ctx context.Context, in *proto.Clo
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *proto.ClosePositionResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *proto.ClosePositionRequest, ...grpc.CallOption) *proto.ClosePositionResponse); ok {
+	var r0 *proto.ClosePositionManuallyResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *proto.ClosePositionManuallyRequest, ...grpc.CallOption) *proto.ClosePositionManuallyResponse); ok {
 		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*proto.ClosePositionResponse)
+			r0 = ret.Get(0).(*proto.ClosePositionManuallyResponse)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *proto.ClosePositionRequest, ...grpc.CallOption) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *proto.ClosePositionManuallyRequest, ...grpc.CallOption) error); ok {
 		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)

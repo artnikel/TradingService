@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TradingServiceClient interface {
 	CreatePosition(ctx context.Context, in *CreatePositionRequest, opts ...grpc.CallOption) (*CreatePositionResponse, error)
-	ClosePosition(ctx context.Context, in *ClosePositionRequest, opts ...grpc.CallOption) (*ClosePositionResponse, error)
+	ClosePositionManually(ctx context.Context, in *ClosePositionManuallyRequest, opts ...grpc.CallOption) (*ClosePositionManuallyResponse, error)
 	GetUnclosedPositions(ctx context.Context, in *GetUnclosedPositionsRequest, opts ...grpc.CallOption) (*GetUnclosedPositionsResponse, error)
 	GetPrices(ctx context.Context, in *GetPricesRequest, opts ...grpc.CallOption) (*GetPricesResponse, error)
 }
@@ -41,9 +41,9 @@ func (c *tradingServiceClient) CreatePosition(ctx context.Context, in *CreatePos
 	return out, nil
 }
 
-func (c *tradingServiceClient) ClosePosition(ctx context.Context, in *ClosePositionRequest, opts ...grpc.CallOption) (*ClosePositionResponse, error) {
-	out := new(ClosePositionResponse)
-	err := c.cc.Invoke(ctx, "/TradingService/ClosePosition", in, out, opts...)
+func (c *tradingServiceClient) ClosePositionManually(ctx context.Context, in *ClosePositionManuallyRequest, opts ...grpc.CallOption) (*ClosePositionManuallyResponse, error) {
+	out := new(ClosePositionManuallyResponse)
+	err := c.cc.Invoke(ctx, "/TradingService/ClosePositionManually", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (c *tradingServiceClient) GetPrices(ctx context.Context, in *GetPricesReque
 // for forward compatibility
 type TradingServiceServer interface {
 	CreatePosition(context.Context, *CreatePositionRequest) (*CreatePositionResponse, error)
-	ClosePosition(context.Context, *ClosePositionRequest) (*ClosePositionResponse, error)
+	ClosePositionManually(context.Context, *ClosePositionManuallyRequest) (*ClosePositionManuallyResponse, error)
 	GetUnclosedPositions(context.Context, *GetUnclosedPositionsRequest) (*GetUnclosedPositionsResponse, error)
 	GetPrices(context.Context, *GetPricesRequest) (*GetPricesResponse, error)
 	mustEmbedUnimplementedTradingServiceServer()
@@ -86,8 +86,8 @@ type UnimplementedTradingServiceServer struct {
 func (UnimplementedTradingServiceServer) CreatePosition(context.Context, *CreatePositionRequest) (*CreatePositionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePosition not implemented")
 }
-func (UnimplementedTradingServiceServer) ClosePosition(context.Context, *ClosePositionRequest) (*ClosePositionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ClosePosition not implemented")
+func (UnimplementedTradingServiceServer) ClosePositionManually(context.Context, *ClosePositionManuallyRequest) (*ClosePositionManuallyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClosePositionManually not implemented")
 }
 func (UnimplementedTradingServiceServer) GetUnclosedPositions(context.Context, *GetUnclosedPositionsRequest) (*GetUnclosedPositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUnclosedPositions not implemented")
@@ -126,20 +126,20 @@ func _TradingService_CreatePosition_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingService_ClosePosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ClosePositionRequest)
+func _TradingService_ClosePositionManually_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClosePositionManuallyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingServiceServer).ClosePosition(ctx, in)
+		return srv.(TradingServiceServer).ClosePositionManually(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TradingService/ClosePosition",
+		FullMethod: "/TradingService/ClosePositionManually",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingServiceServer).ClosePosition(ctx, req.(*ClosePositionRequest))
+		return srv.(TradingServiceServer).ClosePositionManually(ctx, req.(*ClosePositionManuallyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -192,8 +192,8 @@ var TradingService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingService_CreatePosition_Handler,
 		},
 		{
-			MethodName: "ClosePosition",
-			Handler:    _TradingService_ClosePosition_Handler,
+			MethodName: "ClosePositionManually",
+			Handler:    _TradingService_ClosePositionManually_Handler,
 		},
 		{
 			MethodName: "GetUnclosedPositions",
