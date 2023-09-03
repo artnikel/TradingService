@@ -72,12 +72,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go tsrv.Subscribe(ctx)
-	go func(){
-		err := tsrv.BackupUnclosedPositions(ctx)
-		if err != nil {
-			log.Fatalf("Error in method BackupUnclosedPositions: err: %v", err)
-		}
-	}() 
+	go tsrv.BackupUnclosedPositions(ctx)
 	reportProblem := func(ev pq.ListenerEventType, err error) {
 		if err != nil {
 			fmt.Println(err.Error())
@@ -103,5 +98,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to serve listener: %v", err)
 	}
-
 }

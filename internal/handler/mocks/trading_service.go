@@ -61,13 +61,13 @@ func (_m *TradingService) ClosePositionManually(ctx context.Context, dealid uuid
 	return r0, r1
 }
 
-// CreatePosition provides a mock function with given fields: ctx, strategy, deal
-func (_m *TradingService) CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error {
-	ret := _m.Called(ctx, strategy, deal)
+// CreatePosition provides a mock function with given fields: ctx, deal
+func (_m *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) error {
+	ret := _m.Called(ctx, deal)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Deal) error); ok {
-		r0 = rf(ctx, strategy, deal)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Deal) error); ok {
+		r0 = rf(ctx, deal)
 	} else {
 		r0 = ret.Error(0)
 	}

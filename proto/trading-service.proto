@@ -30,8 +30,7 @@ service TradingService {
 }
 
 message CreatePositionRequest{
-    string strategy = 1;
-    Deal deal = 2;
+    Deal deal = 1;
 }
 
 message CreatePositionResponse{}

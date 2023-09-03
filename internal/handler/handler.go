@@ -17,7 +17,7 @@ import (
 
 // TradingService is an interface that contains methods of service for trade
 type TradingService interface {
-	CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error
+	CreatePosition(ctx context.Context, deal *model.Deal) error
 	BalanceOperation(ctx context.Context, balance *model.Balance) (float64, error)
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
 	ClosePositionManually(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error)
@@ -37,7 +37,7 @@ func NewEntityDeal(srvTrading TradingService, validate *validator.Validate) *Ent
 	return &EntityDeal{srvTrading: srvTrading, validate: validate}
 }
 
-// GetProfit is method that calls method of Trading Service
+// CreatePosition is method that calls method of Trading Service
 func (d *EntityDeal) CreatePosition(ctx context.Context, req *proto.CreatePositionRequest) (*proto.CreatePositionResponse, error) {
 	profileID, err := uuid.Parse(req.Deal.ProfileID)
 	if err != nil {
@@ -58,7 +58,7 @@ func (d *EntityDeal) CreatePosition(ctx context.Context, req *proto.CreatePositi
 		logrus.Errorf("error: %v", err)
 		return &proto.CreatePositionResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to validate struct deal")
 	}
-	err = d.srvTrading.CreatePosition(ctx, req.Strategy, createdDeal)
+	err = d.srvTrading.CreatePosition(ctx, createdDeal)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.CreatePositionResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to get profit")
@@ -134,7 +134,7 @@ func (d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUnc
 }
 
 // GetPrices is method that calls method of Trading Service
-func (d *EntityDeal) GetPrices(ctx context.Context, _ *proto.GetPricesRequest) (*proto.GetPricesResponse, error) {
+func (d *EntityDeal) GetPrices(_ context.Context, _ *proto.GetPricesRequest) (*proto.GetPricesResponse, error) {
 	shares, err := d.srvTrading.GetPrices()
 	if err != nil {
 		logrus.Errorf("error: %v", err)

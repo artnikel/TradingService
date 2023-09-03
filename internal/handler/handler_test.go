@@ -17,9 +17,8 @@ import (
 )
 
 var (
-	v            = validator.New()
-	testStrategy = "short"
-	testDeal     = &model.Deal{
+	v        = validator.New()
+	testDeal = &model.Deal{
 		DealID:      uuid.New(),
 		SharesCount: decimal.NewFromFloat(1.5),
 		ProfileID:   uuid.New(),
@@ -46,10 +45,9 @@ func TestCreatePosition(t *testing.T) {
 		TakeProfit:  testDeal.TakeProfit.InexactFloat64(),
 		DealTime:    timestamppb.Now(),
 	}
-	srv.On("GetProfit", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(testDeal.Profit, nil).Once()
+	srv.On("CreatePosition", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	_, err := hndl.CreatePosition(context.Background(), &proto.CreatePositionRequest{
-		Strategy: testStrategy,
-		Deal:     protoDeal,
+		Deal: protoDeal,
 	})
 	require.NoError(t, err)
 	srv.AssertExpectations(t)

@@ -36,8 +36,8 @@ type Balance struct {
 	Operation decimal.Decimal `json:"operation" validate:"required,gt=0" form:"operation"`
 }
 
-// ChanManager contains custom map to work with shares of subscribers
-type ChanManager struct {
+// Manager contains custom maps to work with shares ans positions
+type Manager struct {
 	SubscribersShares map[uuid.UUID]map[string]chan Share
 	PricesMap         map[string]decimal.Decimal
 	Positions         map[uuid.UUID]Deal
