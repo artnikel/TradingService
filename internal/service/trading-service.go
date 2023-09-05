@@ -19,7 +19,7 @@ import (
 // PriceRepository is interface with method for reading prices
 type PriceRepository interface {
 	Subscribe(ctx context.Context, manager chan model.Share) error
-	CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error
+	CreatePosition(ctx context.Context, deal *model.Deal) error
 	ClosePosition(ctx context.Context, deal *model.Deal) error
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
 	GetUnclosedPositionsForAll(ctx context.Context) ([]*model.Deal, error)
@@ -52,19 +52,21 @@ func NewTradingService(priceRep PriceRepository, bRep BalanceRepository, cfg con
 	}
 }
 
+// two constants that contain trading strategies implemented in the application
+const (
+	long  = "long"
+	short = "short"
+)
+
 // identifyStrategy identifies strategy (long or short) by comparing takeprofit and stoploss
-func (ts *TradingService) identifyStrategy(takeProfit, stopLoss decimal.Decimal) string {
-	const (
-		long  = "long"
-		short = "short"
-	)
+func (ts *TradingService) identifyStrategy(takeProfit, stopLoss decimal.Decimal) (string, error) {
 	if takeProfit.Cmp(stopLoss) == 1 {
-		return long
+		return long, nil
 	}
 	if stopLoss.Cmp(takeProfit) == 1 {
-		return short
+		return short, nil
 	}
-	return ""
+	return "", fmt.Errorf("TradingService-identifyStrategy: stoploss = takeprofit")
 }
 
 // WaitForNotification listens changes of positions database
@@ -120,8 +122,11 @@ func (ts *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) 
 	}
 	balance := &model.Balance{ProfileID: deal.ProfileID}
 	stopLoss, takeProfit := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
-	strategy := ts.identifyStrategy(deal.TakeProfit, deal.StopLoss)
-	if strategy == "short" {
+	strategy, err := ts.identifyStrategy(deal.TakeProfit, deal.StopLoss)
+	if err != nil {
+		return fmt.Errorf("TradingService-CreatePosition-identifyStrategy: err:%w", err)
+	}
+	if strategy == short {
 		stopLoss, takeProfit = takeProfit, stopLoss
 	}
 	select {
@@ -133,7 +138,7 @@ func (ts *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) 
 		if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
 			return fmt.Errorf("TradingService-CreatePosition: not enough money")
 		}
-		err := ts.priceRep.CreatePosition(ctx, strategy, deal)
+		err := ts.priceRep.CreatePosition(ctx, deal)
 		if err != nil {
 			return fmt.Errorf("TradingService-CreatePosition: error:%w", err)
 		}
@@ -152,16 +157,19 @@ func (ts *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) 
 func (ts *TradingService) GetProfit(ctx context.Context, deal *model.Deal) {
 	ts.manager.Mu.RLock()
 	if _, ok := ts.manager.SubscribersShares[deal.ProfileID]; !ok {
-		logrus.Errorf("TradingService-GetProfit: value in map SubscribersShares with key profileid is not exist")
+		logrus.Errorf("TradingService-GetProfit: value in map SubscribersShares with key profileid: %s is not exist", deal.ProfileID.String())
 	}
 	if _, ok := ts.manager.SubscribersShares[deal.ProfileID][deal.Company]; !ok {
-		logrus.Errorf("TradingService-GetProfit: value in map SubscribersShares with key company is not exist")
+		logrus.Errorf("TradingService-GetProfit: value in map SubscribersShares with key company: %s is not exist", deal.Company)
 	}
 	ts.manager.Mu.RUnlock()
 
 	stopLoss, takeProfit := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
-	strategy := ts.identifyStrategy(deal.TakeProfit, deal.StopLoss)
-	if strategy == "short" {
+	strategy, err := ts.identifyStrategy(deal.TakeProfit, deal.StopLoss)
+	if err != nil {
+		logrus.Errorf("TradingService-GetProfit-identifyStrategy: err:%v", err)
+	}
+	if strategy == short {
 		stopLoss, takeProfit = takeProfit, stopLoss
 	}
 	for {
@@ -174,10 +182,10 @@ func (ts *TradingService) GetProfit(ctx context.Context, deal *model.Deal) {
 			}
 			ts.manager.Mu.RUnlock()
 
-			if strategy == "long" {
+			if strategy == long {
 				fmt.Println("Deal ID: ", deal.DealID, " Profit :", share.Price.Mul(deal.SharesCount).Sub(deal.PurchasePrice.Mul(deal.SharesCount)))
 			}
-			if strategy == "short" {
+			if strategy == short {
 				fmt.Println("Deal ID: ", deal.DealID, " Profit :", deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Price.Mul(deal.SharesCount)))
 			}
 			if stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount)) || share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
@@ -268,8 +276,8 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 			ts.manager.PricesMap[share.Company] = share.Price
 			ts.manager.Mu.Unlock()
 			for _, subShares := range ts.manager.SubscribersShares {
-				if v, ok := subShares[share.Company]; ok {
-					v <- share
+				if value, ok := subShares[share.Company]; ok {
+					value <- share
 				}
 			}
 		default:

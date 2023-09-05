@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -23,8 +24,7 @@ var (
 		ProfileID: uuid.New(),
 		Operation: decimal.NewFromFloat(2000),
 	}
-	testStrategy = "long"
-	testDeal     = &model.Deal{
+	testDeal = &model.Deal{
 		DealID:        uuid.New(),
 		SharesCount:   decimal.NewFromFloat(1),
 		ProfileID:     testBalance.ProfileID,
@@ -32,6 +32,21 @@ var (
 		PurchasePrice: decimal.NewFromFloat(200),
 		StopLoss:      decimal.NewFromFloat(100),
 		TakeProfit:    decimal.NewFromFloat(1000),
+		DealTime:      time.Now().UTC(),
+	}
+	testBalanceSecond = &model.Balance{
+		BalanceID: uuid.New(),
+		ProfileID: uuid.New(),
+		Operation: decimal.NewFromFloat(5000),
+	}
+	testDealSecond = &model.Deal{
+		DealID:        uuid.New(),
+		SharesCount:   decimal.NewFromFloat(1),
+		ProfileID:     testBalanceSecond.ProfileID,
+		Company:       "Xerox",
+		PurchasePrice: decimal.NewFromFloat(2000),
+		StopLoss:      decimal.NewFromFloat(1000),
+		TakeProfit:    decimal.NewFromFloat(3000),
 		DealTime:      time.Now().UTC(),
 	}
 	testProfit = decimal.NewFromFloat(100)
@@ -51,8 +66,9 @@ func TestMain(m *testing.M) {
 func TestIdentifyStrategy(t *testing.T) {
 	trep := new(mocks.PriceRepository)
 	srv := NewTradingService(trep, nil, *cfg)
-	strategy := srv.identifyStrategy(testDeal.TakeProfit, testDeal.StopLoss)
-	require.Equal(t, strategy, testStrategy, "long")
+	strategy, err := srv.identifyStrategy(testDeal.TakeProfit, testDeal.StopLoss)
+	require.NoError(t, err)
+	require.Equal(t, strategy, long)
 	trep.AssertExpectations(t)
 }
 
@@ -60,7 +76,7 @@ func TestWaitForNotification(t *testing.T) {
 	trep := new(mocks.PriceRepository)
 	srv := NewTradingService(trep, nil, *cfg)
 	l := &pq.Listener{
-		Notify: make(chan *pq.Notification),
+		Notify: make(chan *pq.Notification, 1),
 	}
 	defer close(l.Notify)
 	notificationData := `{
@@ -90,7 +106,7 @@ func TestCreatePosition(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	trep := new(mocks.PriceRepository)
 	srv := NewTradingService(trep, brep, *cfg)
-	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(nil).Once()
+	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	go func() {
@@ -104,29 +120,135 @@ func TestCreatePosition(t *testing.T) {
 	brep.AssertExpectations(t)
 }
 
+func TestCreateTwoPositions(t *testing.T) {
+	brep := new(mocks.BalanceRepository)
+	trep := new(mocks.PriceRepository)
+	srv := NewTradingService(trep, brep, *cfg)
+	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil)
+	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil)
+	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		srv.manager.Mu.Lock()
+		srv.manager.SubscribersShares[testDeal.ProfileID] = make(map[string]chan model.Share)
+		srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] = make(chan model.Share, 1)
+		srv.manager.Mu.Unlock()
+		srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] <- model.Share{
+			Company: testDeal.Company,
+			Price:   (decimal.NewFromInt(250))}
+		err := srv.CreatePosition(context.Background(), testDeal)
+		require.NoError(t, err)
+	}()
+	go func() {
+		defer wg.Done()
+		srv.manager.Mu.Lock()
+		srv.manager.SubscribersShares[testDealSecond.ProfileID] = make(map[string]chan model.Share)
+		srv.manager.SubscribersShares[testDealSecond.ProfileID][testDealSecond.Company] = make(chan model.Share, 1)
+		srv.manager.Mu.Unlock()
+		srv.manager.SubscribersShares[testDealSecond.ProfileID][testDealSecond.Company] <- model.Share{
+			Company: testDealSecond.Company,
+			Price:   (decimal.NewFromInt(1500))}
+		err := srv.CreatePosition(context.Background(), testDealSecond)
+		require.NoError(t, err)
+	}()
+	wg.Wait()
+	trep.AssertExpectations(t)
+	brep.AssertExpectations(t)
+}
+
 func TestGetProfit(t *testing.T) {
 	trep := new(mocks.PriceRepository)
 	brep := new(mocks.BalanceRepository)
 	srv := NewTradingService(trep, brep, *cfg)
-	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("uuid.UUID")).Return(testProfit, nil).Once()
-	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(nil).Once()
+	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
+	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
-	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
+	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 	go func() {
 		srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] <- model.Share{
 			Company: testDeal.Company,
-			Price:   (decimal.NewFromInt(250))}
+			Price:   (decimal.NewFromInt(950))}
 	}()
-	err := srv.CreatePosition(context.Background(), testDeal)
+	err := srv.CreatePosition(ctx, testDeal)
 	require.NoError(t, err)
 	go func() {
+		srv.manager.Mu.Lock()
+		srv.manager.Positions[testDeal.DealID] = *testDeal
+		srv.manager.Mu.Unlock()
 		srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] <- model.Share{
 			Company: testDeal.Company,
 			Price:   (decimal.NewFromInt(1050))}
 	}()
-	srv.GetProfit(context.Background(), testDeal)
-	require.NotEmpty(t, testDeal.EndDealTime)
-	require.NotEmpty(t, testDeal.Profit)
+	srv.GetProfit(ctx, testDeal)
+	trep.AssertExpectations(t)
+	brep.AssertExpectations(t)
+}
+
+func TestGetProfitForTwoUsers(t *testing.T) {
+	brep := new(mocks.BalanceRepository)
+	trep := new(mocks.PriceRepository)
+	srv := NewTradingService(trep, brep, *cfg)
+	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil)
+	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil)
+	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil)
+	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil)
+	ctx1, cancel1 := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel1()
+	ctx2, cancel2 := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel2()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		srv.manager.Mu.Lock()
+		srv.manager.SubscribersShares[testDeal.ProfileID] = make(map[string]chan model.Share)
+		srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] = make(chan model.Share, 1)
+		srv.manager.Mu.Unlock()
+		srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] <- model.Share{
+			Company: testDeal.Company,
+			Price:   (decimal.NewFromInt(250))}
+		err := srv.CreatePosition(ctx1, testDeal)
+		require.NoError(t, err)
+	}()
+	go func() {
+		defer wg.Done()
+		srv.manager.Mu.Lock()
+		srv.manager.SubscribersShares[testDealSecond.ProfileID] = make(map[string]chan model.Share)
+		srv.manager.SubscribersShares[testDealSecond.ProfileID][testDealSecond.Company] = make(chan model.Share, 1)
+		srv.manager.Mu.Unlock()
+		srv.manager.SubscribersShares[testDealSecond.ProfileID][testDealSecond.Company] <- model.Share{
+			Company: testDealSecond.Company,
+			Price:   (decimal.NewFromInt(1500))}
+		err := srv.CreatePosition(ctx2, testDealSecond)
+		require.NoError(t, err)
+	}()
+	wg.Wait()
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		srv.manager.Mu.Lock()
+		srv.manager.Positions[testDeal.DealID] = *testDeal
+		srv.manager.Mu.Unlock()
+		srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] <- model.Share{
+			Company: testDeal.Company,
+			Price:   (decimal.NewFromInt(1050))}
+		srv.GetProfit(ctx1, testDeal)
+	}()
+	go func() {
+		defer wg.Done()
+		srv.manager.Mu.Lock()
+		srv.manager.Positions[testDealSecond.DealID] = *testDealSecond
+		srv.manager.Mu.Unlock()
+		srv.manager.SubscribersShares[testDealSecond.ProfileID][testDealSecond.Company] <- model.Share{
+			Company: testDealSecond.Company,
+			Price:   (decimal.NewFromInt(900))}
+		srv.GetProfit(ctx2, testDealSecond)
+	}()
+	wg.Wait()
 	trep.AssertExpectations(t)
 	brep.AssertExpectations(t)
 }
@@ -145,7 +267,44 @@ func TestClosePosition(t *testing.T) {
 	sharePrice := decimal.NewFromFloat(300)
 	profit, err := srv.ClosePosition(context.Background(), testDeal.DealID, testDeal.ProfileID, sharePrice)
 	require.NoError(t, err)
-	require.Equal(t, profit.InexactFloat64(), testProfit.InexactFloat64(), sharePrice.Sub(testDeal.PurchasePrice).InexactFloat64())
+	require.Equal(t, profit.InexactFloat64(), sharePrice.Sub(testDeal.PurchasePrice).InexactFloat64())
+	trep.AssertExpectations(t)
+	brep.AssertExpectations(t)
+}
+
+func TestCloseTwoPositions(t *testing.T) {
+	brep := new(mocks.BalanceRepository)
+	trep := new(mocks.PriceRepository)
+	srv := NewTradingService(trep, brep, *cfg)
+	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil)
+	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil)
+	srv.manager.Mu.Lock()
+	srv.manager.Positions[testDeal.DealID] = *testDeal
+	srv.manager.SubscribersShares[testDeal.ProfileID] = make(map[string]chan model.Share)
+	srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] = make(chan model.Share)
+	srv.manager.Positions[testDealSecond.DealID] = *testDealSecond
+	srv.manager.SubscribersShares[testDealSecond.ProfileID] = make(map[string]chan model.Share)
+	srv.manager.SubscribersShares[testDealSecond.ProfileID][testDealSecond.Company] = make(chan model.Share)
+	srv.manager.Mu.Unlock()
+	var (
+		wg               sync.WaitGroup
+		sharePriceFirst  = decimal.NewFromFloat(300)
+		sharePriceSecond = decimal.NewFromFloat(200)
+	)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		profit, err := srv.ClosePosition(context.Background(), testDeal.DealID, testDeal.ProfileID, sharePriceFirst)
+		require.NoError(t, err)
+		require.Equal(t, profit.InexactFloat64(), sharePriceFirst.Sub(testDeal.PurchasePrice).InexactFloat64())
+	}()
+	go func() {
+		defer wg.Done()
+		profit, err := srv.ClosePosition(context.Background(), testDealSecond.DealID, testDealSecond.ProfileID, sharePriceSecond)
+		require.NoError(t, err)
+		require.Equal(t, profit.InexactFloat64(), sharePriceSecond.Sub(testDealSecond.PurchasePrice).InexactFloat64())
+	}()
+	wg.Wait()
 	trep.AssertExpectations(t)
 	brep.AssertExpectations(t)
 }
@@ -154,19 +313,29 @@ func TestClosePositionManually(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	trep := new(mocks.PriceRepository)
 	srv := NewTradingService(trep, brep, *cfg)
+	testDealForClose := &model.Deal{
+		DealID:        uuid.New(),
+		SharesCount:   decimal.NewFromFloat(1),
+		ProfileID:     testBalanceSecond.ProfileID,
+		Company:       "Xerox",
+		PurchasePrice: decimal.NewFromFloat(2000),
+		StopLoss:      decimal.NewFromFloat(1000),
+		TakeProfit:    decimal.NewFromFloat(3000),
+		DealTime:      time.Now().UTC(),
+	}
 	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	srv.manager.Mu.Lock()
-	srv.manager.Positions[testDeal.DealID] = *testDeal
-	srv.manager.SubscribersShares[testDeal.ProfileID] = make(map[string]chan model.Share)
-	srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] = make(chan model.Share)
+	srv.manager.Positions[testDealForClose.DealID] = *testDealForClose
+	srv.manager.SubscribersShares[testDealForClose.ProfileID] = make(map[string]chan model.Share)
+	srv.manager.SubscribersShares[testDealForClose.ProfileID][testDealForClose.Company] = make(chan model.Share)
 	srv.manager.Mu.Unlock()
 	go func() {
-		srv.manager.SubscribersShares[testDeal.ProfileID][testDeal.Company] <- model.Share{
-			Company: testDeal.Company,
-			Price:   (decimal.NewFromInt(300))}
+		srv.manager.SubscribersShares[testDealForClose.ProfileID][testDealForClose.Company] <- model.Share{
+			Company: testDealForClose.Company,
+			Price:   (decimal.NewFromInt(2100))}
 	}()
-	profit, err := srv.ClosePositionManually(context.Background(), testDeal.DealID, testDeal.ProfileID)
+	profit, err := srv.ClosePositionManually(context.Background(), testDealForClose.DealID, testDealForClose.ProfileID)
 	require.NoError(t, err)
 	require.Equal(t, profit.InexactFloat64(), testProfit.InexactFloat64())
 	trep.AssertExpectations(t)

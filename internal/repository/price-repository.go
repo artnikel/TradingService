@@ -59,8 +59,8 @@ func (p *PriceRepository) Subscribe(ctx context.Context, manager chan model.Shar
 }
 
 // CreatePosition created in database new row with deal
-func (p *PriceRepository) CreatePosition(ctx context.Context, strategy string, deal *model.Deal) error {
-	if strategy == "short" {
+func (p *PriceRepository) CreatePosition(ctx context.Context, deal *model.Deal) error {
+	if deal.StopLoss.Cmp(deal.TakeProfit) == 1 {
 		deal.Profit = deal.Profit.Neg()
 	}
 	_, err := p.pool.Exec(ctx, `INSERT INTO deal 

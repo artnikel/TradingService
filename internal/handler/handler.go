@@ -61,7 +61,7 @@ func (d *EntityDeal) CreatePosition(ctx context.Context, req *proto.CreatePositi
 	err = d.srvTrading.CreatePosition(ctx, createdDeal)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
-		return &proto.CreatePositionResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to get profit")
+		return &proto.CreatePositionResponse{}, fmt.Errorf("EntityDeal-GetProfit: failed to get profit: %w", err)
 	}
 	return &proto.CreatePositionResponse{}, nil
 }

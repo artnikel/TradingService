@@ -29,7 +29,6 @@ var (
 		TakeProfit:    decimal.NewFromFloat(200),
 		DealTime:      time.Now().UTC(),
 	}
-	strategy  = "long"
 	closeDeal = &model.Deal{
 		Profit:      decimal.NewFromFloat(42.2),
 		EndDealTime: time.Now().UTC(),
@@ -93,7 +92,7 @@ func TestMain(m *testing.M) {
 
 func TestAddGetPosition(t *testing.T) {
 	var tempDeal *model.Deal
-	err := pg.CreatePosition(context.Background(), strategy, testDeal)
+	err := pg.CreatePosition(context.Background(), testDeal)
 	require.NoError(t, err)
 	unclosedDeals, err := pg.GetUnclosedPositions(context.Background(), testDeal.ProfileID)
 	require.NoError(t, err)
@@ -120,7 +119,7 @@ func TestAddGetPosition(t *testing.T) {
 func TestClosePosition(t *testing.T) {
 	testDeal.DealID = uuid.New()
 	testDeal.ProfileID = uuid.New()
-	err := pg.CreatePosition(context.Background(), strategy, testDeal)
+	err := pg.CreatePosition(context.Background(), testDeal)
 	require.NoError(t, err)
 	closeDeal.DealID = testDeal.DealID
 	err = pg.ClosePosition(context.Background(), closeDeal)
@@ -132,7 +131,7 @@ func TestClosePosition(t *testing.T) {
 
 func TestGetUnclosedPositions(t *testing.T) {
 	testDeal.DealID = uuid.New()
-	err := pg.CreatePosition(context.Background(), strategy, testDeal)
+	err := pg.CreatePosition(context.Background(), testDeal)
 	require.NoError(t, err)
 	unclosedDeals, err := pg.GetUnclosedPositions(context.Background(), testDeal.ProfileID)
 	require.NoError(t, err)

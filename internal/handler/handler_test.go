@@ -45,7 +45,7 @@ func TestCreatePosition(t *testing.T) {
 		TakeProfit:  testDeal.TakeProfit.InexactFloat64(),
 		DealTime:    timestamppb.Now(),
 	}
-	srv.On("CreatePosition", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("*model.Deal")).Return(nil).Once()
+	srv.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	_, err := hndl.CreatePosition(context.Background(), &proto.CreatePositionRequest{
 		Deal: protoDeal,
 	})
