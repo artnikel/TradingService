@@ -175,7 +175,7 @@ func TestGetProfit(t *testing.T) {
 		srv.manager.PricesMap[testDeal.Company] = decimal.NewFromInt(1050)
 		srv.manager.Mu.Unlock()
 	}()
-	srv.GetProfit(ctx, *testDeal)
+	srv.getProfit(ctx, *testDeal)
 	trep.AssertExpectations(t)
 	brep.AssertExpectations(t)
 }
@@ -220,7 +220,7 @@ func TestGetProfitForTwoUsers(t *testing.T) {
 		srv.manager.Positions[testDeal.ProfileID][testDeal.DealID] = *testDeal
 		srv.manager.PricesMap[testDeal.Company] = decimal.NewFromInt(1050)
 		srv.manager.Mu.Unlock()
-		srv.GetProfit(ctx1, *testDeal)
+		srv.getProfit(ctx1, *testDeal)
 	}()
 	go func() {
 		defer wg.Done()
@@ -228,7 +228,7 @@ func TestGetProfitForTwoUsers(t *testing.T) {
 		srv.manager.Positions[testDealSecond.ProfileID][testDealSecond.DealID] = *testDealSecond
 		srv.manager.PricesMap[testDealSecond.Company] = decimal.NewFromInt(950)
 		srv.manager.Mu.Unlock()
-		srv.GetProfit(ctx2, *testDealSecond)
+		srv.getProfit(ctx2, *testDealSecond)
 	}()
 	wg.Wait()
 	trep.AssertExpectations(t)
@@ -246,7 +246,7 @@ func TestClosePosition(t *testing.T) {
 	srv.manager.Positions[testDeal.ProfileID][testDeal.DealID] = *testDeal
 	srv.manager.Mu.Unlock()
 	sharePrice := decimal.NewFromFloat(300)
-	profit, err := srv.ClosePosition(context.Background(), testDeal.DealID, testDeal.ProfileID, sharePrice)
+	profit, err := srv.closePosition(context.Background(), testDeal.DealID, testDeal.ProfileID, sharePrice)
 	require.NoError(t, err)
 	require.Equal(t, profit.InexactFloat64(), sharePrice.Sub(testDeal.PurchasePrice).InexactFloat64())
 	trep.AssertExpectations(t)
@@ -273,13 +273,13 @@ func TestCloseTwoPositions(t *testing.T) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		profit, err := srv.ClosePosition(context.Background(), testDeal.DealID, testDeal.ProfileID, sharePriceFirst)
+		profit, err := srv.closePosition(context.Background(), testDeal.DealID, testDeal.ProfileID, sharePriceFirst)
 		require.NoError(t, err)
 		require.Equal(t, profit.InexactFloat64(), sharePriceFirst.Sub(testDeal.PurchasePrice).InexactFloat64())
 	}()
 	go func() {
 		defer wg.Done()
-		profit, err := srv.ClosePosition(context.Background(), testDealSecond.DealID, testDealSecond.ProfileID, sharePriceSecond)
+		profit, err := srv.closePosition(context.Background(), testDealSecond.DealID, testDealSecond.ProfileID, sharePriceSecond)
 		require.NoError(t, err)
 		require.Equal(t, profit.InexactFloat64(), sharePriceSecond.Sub(testDealSecond.PurchasePrice).InexactFloat64())
 	}()
