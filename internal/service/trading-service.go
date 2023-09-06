@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/artnikel/TradingService/internal/config"
@@ -45,9 +46,9 @@ func NewTradingService(priceRep PriceRepository, bRep BalanceRepository, cfg con
 		priceRep: priceRep,
 		bRep:     bRep,
 		manager: &model.Manager{
-			SubscribersShares: make(map[uuid.UUID]map[string]chan model.Share),
-			PricesMap:         make(map[string]decimal.Decimal),
-			Positions:         make(map[uuid.UUID]model.Deal)},
+			PricesMap: make(map[string]decimal.Decimal),
+			Positions: make(map[uuid.UUID]map[uuid.UUID]model.Deal),
+			Mu:        sync.RWMutex{}},
 		cfg: cfg,
 	}
 }
@@ -86,15 +87,16 @@ func (ts *TradingService) WaitForNotification(ctx context.Context, l *pq.Listene
 			}
 			if valueToParse.Action == "INSERT" {
 				ts.manager.Mu.Lock()
-				ts.manager.Positions[valueToParse.DealID] = valueToParse.Deal
+				ts.manager.Positions[valueToParse.ProfileID][valueToParse.DealID] = valueToParse.Deal
 				ts.manager.Mu.Unlock()
-				go ts.GetProfit(ctx, &valueToParse.Deal)
+				go ts.GetProfit(ctx, valueToParse.Deal)
 			}
 			if valueToParse.Action == "UPDATE" {
 				ts.manager.Mu.Lock()
-				delete(ts.manager.Positions, valueToParse.DealID)
-				delete(ts.manager.SubscribersShares[valueToParse.ProfileID], valueToParse.Company)
-				delete(ts.manager.SubscribersShares, valueToParse.ProfileID)
+				delete(ts.manager.Positions[valueToParse.ProfileID], valueToParse.DealID)
+				if len(ts.manager.Positions[valueToParse.ProfileID]) == 0 {
+					delete(ts.manager.Positions, valueToParse.ProfileID)
+				}
 				ts.manager.Mu.Unlock()
 			}
 		case <-ctx.Done():
@@ -108,14 +110,11 @@ func (ts *TradingService) WaitForNotification(ctx context.Context, l *pq.Listene
 // CreatePosition defines purchase price and insert new position in database
 func (ts *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) error {
 	ts.manager.Mu.Lock()
-	if _, ok := ts.manager.SubscribersShares[deal.ProfileID]; !ok {
-		ts.manager.SubscribersShares[deal.ProfileID] = make(map[string]chan model.Share)
+	if _, ok := ts.manager.Positions[deal.ProfileID]; !ok {
+		ts.manager.Positions[deal.ProfileID] = make(map[uuid.UUID]model.Deal)
 	}
-	if _, ok := ts.manager.SubscribersShares[deal.ProfileID][deal.Company]; !ok {
-		ts.manager.SubscribersShares[deal.ProfileID][deal.Company] = make(chan model.Share)
-	}
+	deal.PurchasePrice = ts.manager.PricesMap[deal.Company]
 	ts.manager.Mu.Unlock()
-
 	balanceMoney, err := ts.bRep.GetBalance(ctx, deal.ProfileID)
 	if err != nil {
 		return fmt.Errorf("TradingService-CreatePosition-GetBalance: error:%w", err)
@@ -129,38 +128,33 @@ func (ts *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) 
 	if strategy == short {
 		stopLoss, takeProfit = takeProfit, stopLoss
 	}
-	select {
-	case share := <-ts.manager.SubscribersShares[deal.ProfileID][deal.Company]:
-		deal.PurchasePrice = share.Price
-		if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
-			return fmt.Errorf("TradingService-CreatePosition: purchase price out of takeprofit/stoploss")
-		}
-		if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
-			return fmt.Errorf("TradingService-CreatePosition: not enough money")
-		}
-		err := ts.priceRep.CreatePosition(ctx, deal)
-		if err != nil {
-			return fmt.Errorf("TradingService-CreatePosition: error:%w", err)
-		}
-		balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
-		_, err = ts.bRep.BalanceOperation(ctx, balance)
-		if err != nil {
-			return fmt.Errorf("TradingService-CreatePosition-BalanceOperation: error:%w", err)
-		}
-		return nil
-	case <-ctx.Done():
-		return nil
+	if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
+		return fmt.Errorf("TradingService-CreatePosition: purchase price out of takeprofit/stoploss")
 	}
+	if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
+		return fmt.Errorf("TradingService-CreatePosition: not enough money")
+	}
+	balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
+	_, err = ts.bRep.BalanceOperation(ctx, balance)
+	if err != nil {
+		return fmt.Errorf("TradingService-CreatePosition-BalanceOperation: error:%w", err)
+	}
+	err = ts.priceRep.CreatePosition(ctx, deal)
+	if err != nil {
+		return fmt.Errorf("TradingService-CreatePosition: error:%w", err)
+	}
+	return nil
 }
 
+// nolint gocrtitc
 // GetProfit monitors prices and compares them to takeprofit and stoploss
-func (ts *TradingService) GetProfit(ctx context.Context, deal *model.Deal) {
+func (ts *TradingService) GetProfit(ctx context.Context, deal model.Deal) {
 	ts.manager.Mu.RLock()
-	if _, ok := ts.manager.SubscribersShares[deal.ProfileID]; !ok {
-		logrus.Errorf("TradingService-GetProfit: value in map SubscribersShares with key profileid: %s is not exist", deal.ProfileID.String())
+	if _, ok := ts.manager.Positions[deal.ProfileID]; !ok {
+		logrus.Errorf("TradingService-GetProfit: value in map Positions with key profileid: %s is not exist", deal.ProfileID.String())
 	}
-	if _, ok := ts.manager.SubscribersShares[deal.ProfileID][deal.Company]; !ok {
-		logrus.Errorf("TradingService-GetProfit: value in map SubscribersShares with key company: %s is not exist", deal.Company)
+	if _, ok := ts.manager.Positions[deal.ProfileID][deal.DealID]; !ok {
+		logrus.Errorf("TradingService-GetProfit: value in map Positions with key dealID: %s is not exist", deal.DealID.String())
 	}
 	ts.manager.Mu.RUnlock()
 
@@ -174,30 +168,31 @@ func (ts *TradingService) GetProfit(ctx context.Context, deal *model.Deal) {
 	}
 	for {
 		select {
-		case share := <-ts.manager.SubscribersShares[deal.ProfileID][deal.Company]:
+		case <-ctx.Done():
+			return
+		default:
 			ts.manager.Mu.RLock()
-			if _, ok := ts.manager.Positions[deal.DealID]; !ok {
+			share := ts.manager.PricesMap[deal.Company]
+			if _, ok := ts.manager.Positions[deal.ProfileID][deal.DealID]; !ok {
 				ts.manager.Mu.RUnlock()
-				break
+				continue
 			}
 			ts.manager.Mu.RUnlock()
 
 			if strategy == long {
-				fmt.Println("Deal ID: ", deal.DealID, " Profit :", share.Price.Mul(deal.SharesCount).Sub(deal.PurchasePrice.Mul(deal.SharesCount)))
+				fmt.Println("Deal ID: ", deal.DealID, " Profit :", share.Mul(deal.SharesCount).Sub(deal.PurchasePrice.Mul(deal.SharesCount)))
 			}
 			if strategy == short {
-				fmt.Println("Deal ID: ", deal.DealID, " Profit :", deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Price.Mul(deal.SharesCount)))
+				fmt.Println("Deal ID: ", deal.DealID, " Profit :", deal.PurchasePrice.Mul(deal.SharesCount).Sub(share.Mul(deal.SharesCount)))
 			}
-			if stopLoss.GreaterThanOrEqual(share.Price.Mul(deal.SharesCount)) || share.Price.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
-				profit, err := ts.ClosePosition(ctx, deal.DealID, deal.ProfileID, share.Price)
+			if stopLoss.GreaterThanOrEqual(share.Mul(deal.SharesCount)) || share.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
+				profit, err := ts.ClosePosition(ctx, deal.DealID, deal.ProfileID, share)
 				if err != nil {
 					logrus.Errorf("TradingService-GetProfit-ClosePosition: error:%v", err)
 				}
 				fmt.Println("Position closed with profit: ", profit)
 				return
 			}
-		case <-ctx.Done():
-			return
 		}
 	}
 }
@@ -208,16 +203,13 @@ func (ts *TradingService) ClosePosition(ctx context.Context, dealid, profileid u
 	balance.ProfileID = profileid
 
 	ts.manager.Mu.RLock()
-	if _, ok := ts.manager.Positions[dealid]; !ok {
+	if _, ok := ts.manager.Positions[profileid]; !ok {
 		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: key of map Positions is not exist")
 	}
-	deal := ts.manager.Positions[dealid]
-	if _, ok := ts.manager.SubscribersShares[profileid]; !ok {
-		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: value in map SubscribersShares with key profileid is not exist")
+	if _, ok := ts.manager.Positions[profileid][dealid]; !ok {
+		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: value in map Positions with key dealid is not exist")
 	}
-	if _, ok := ts.manager.SubscribersShares[profileid][deal.Company]; !ok {
-		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: value in map SubscribersShares with key company is not exist")
-	}
+	deal := ts.manager.Positions[profileid][dealid]
 	ts.manager.Mu.RUnlock()
 
 	deal.EndDealTime = time.Now().UTC()
@@ -242,13 +234,18 @@ func (ts *TradingService) ClosePosition(ctx context.Context, dealid, profileid u
 
 // ClosePositionManually is a method that calls from user before closing by takeprofit/stoploss
 func (ts *TradingService) ClosePositionManually(ctx context.Context, dealid, profileid uuid.UUID) (decimal.Decimal, error) {
-	deal := ts.manager.Positions[dealid]
+	ts.manager.Mu.RLock()
+	deal := ts.manager.Positions[profileid][dealid]
+	ts.manager.Mu.RUnlock()
 	for {
 		select {
 		case <-ctx.Done():
 			return decimal.Zero, nil
-		case share := <-ts.manager.SubscribersShares[profileid][deal.Company]:
-			profit, err := ts.ClosePosition(ctx, dealid, profileid, share.Price)
+		default:
+			ts.manager.Mu.RLock()
+			share := ts.manager.PricesMap[deal.Company]
+			ts.manager.Mu.RUnlock()
+			profit, err := ts.ClosePosition(ctx, dealid, profileid, share)
 			if err != nil {
 				return decimal.Zero, fmt.Errorf("TradingService-ClosePositionManually-ClosePosition: error: %w", err)
 			}
@@ -268,21 +265,12 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 		}
 	}()
 	for {
-		select {
-		case <-ctx.Done():
-			return
-		case share := <-submanager:
-			ts.manager.Mu.Lock()
+		ts.manager.Mu.Lock()
+		for i := 0; i < cap(submanager); i++ {
+			share := <-submanager
 			ts.manager.PricesMap[share.Company] = share.Price
-			ts.manager.Mu.Unlock()
-			for _, subShares := range ts.manager.SubscribersShares {
-				if value, ok := subShares[share.Company]; ok {
-					value <- share
-				}
-			}
-		default:
-			continue
 		}
+		ts.manager.Mu.Unlock()
 	}
 }
 
@@ -318,14 +306,12 @@ func (ts *TradingService) BackupUnclosedPositions(ctx context.Context) {
 	if err != nil {
 		logrus.Errorf("TradingService-BackupUnclosedPositions-GetUnclosedPositionsForAll: error:%v", err)
 	}
-	for _, unclosedDeal := range unclosedDeals {
-		deal := unclosedDeal
+	for _, deal := range unclosedDeals {
 		ts.manager.Mu.Lock()
-		ts.manager.Positions[deal.DealID] = *deal
-		ts.manager.SubscribersShares[deal.ProfileID] = make(map[string]chan model.Share)
-		ts.manager.SubscribersShares[deal.ProfileID][deal.Company] = make(chan model.Share)
+		ts.manager.Positions[deal.ProfileID] = make(map[uuid.UUID]model.Deal)
+		ts.manager.Positions[deal.ProfileID][deal.DealID] = *deal
 		ts.manager.Mu.Unlock()
-		go ts.GetProfit(ctx, deal)
+		go ts.GetProfit(ctx, *deal)
 	}
 }
 

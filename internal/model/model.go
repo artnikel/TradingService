@@ -38,8 +38,7 @@ type Balance struct {
 
 // Manager contains custom maps to work with shares ans positions
 type Manager struct {
-	SubscribersShares map[uuid.UUID]map[string]chan Share
-	PricesMap         map[string]decimal.Decimal
-	Positions         map[uuid.UUID]Deal
-	Mu                sync.RWMutex
+	PricesMap map[string]decimal.Decimal
+	Positions map[uuid.UUID]map[uuid.UUID]Deal
+	Mu        sync.RWMutex
 }

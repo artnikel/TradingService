@@ -5,15 +5,20 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
+	sproto "github.com/artnikel/PriceService/proto"
+	"github.com/artnikel/PriceService/proto/mocks"
 	"github.com/artnikel/TradingService/internal/config"
 	"github.com/artnikel/TradingService/internal/model"
+	"github.com/caarlos0/env"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ory/dockertest"
 	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -88,6 +93,51 @@ func TestMain(m *testing.M) {
 	exitVal := m.Run()
 	cleanupPostgres()
 	os.Exit(exitVal)
+}
+
+func TestSubscribe(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	mockClient := new(mocks.PriceServiceClient)
+
+	mockStream := new(mocks.PriceService_SubscribeClient)
+
+	expectedShares := []*sproto.Shares{
+		{Company: "Apple", Price: 100},
+		{Company: "Xerox", Price: 200},
+	}
+	mockStream.On("Recv").Return(&sproto.SubscribeResponse{Shares: expectedShares}, nil)
+
+	mockClient.On("Subscribe", mock.Anything, mock.Anything).Return(mockStream, nil)
+
+	var cfg config.Variables
+	err := env.Parse(&cfg)
+	require.NoError(t, err)
+
+	lenOfReadableShares := len(strings.Split(cfg.CompanyShares, ","))
+
+	r := NewPriceRepository(mockClient, nil, cfg)
+
+	subscribersShares := make(chan model.Share, lenOfReadableShares)
+
+	go r.Subscribe(ctx, subscribersShares)
+
+	select {
+	case firstShare := <-subscribersShares:
+		require.Equal(t, len(expectedShares), len(subscribersShares)+1)
+
+		require.Equal(t, firstShare.Company, expectedShares[0].Company)
+		require.Equal(t, firstShare.Price.InexactFloat64(), expectedShares[0].Price)
+
+		secondShare := <-subscribersShares
+		require.Equal(t, secondShare.Company, expectedShares[1].Company)
+		require.Equal(t, secondShare.Price.InexactFloat64(), expectedShares[1].Price)
+
+	case <-time.After(time.Second * 5):
+		t.Error("Timed out while waiting for shares")
+	}
+	mockClient.AssertExpectations(t)
+	mockStream.AssertExpectations(t)
 }
 
 func TestAddGetPosition(t *testing.T) {

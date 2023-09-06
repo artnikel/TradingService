@@ -33,6 +33,7 @@ func NewPriceRepository(client pproto.PriceServiceClient, pool *pgxpool.Pool, cf
 // Subscribe call a method of PriceService.
 func (p *PriceRepository) Subscribe(ctx context.Context, manager chan model.Share) error {
 	companyShares := strings.Split(p.cfg.CompanyShares, ",")
+	lastShares := make(map[string]decimal.Decimal)
 	stream, err := p.client.Subscribe(ctx, &pproto.SubscribeRequest{
 		Uuid:           uuid.NewString(),
 		SelectedShares: companyShares,
@@ -41,19 +42,29 @@ func (p *PriceRepository) Subscribe(ctx context.Context, manager chan model.Shar
 		return fmt.Errorf("PriceRepository-Subscribe: error:%w", err)
 	}
 	for {
-		protoResponse, err := stream.Recv()
-		if err != nil {
-			if ctx.Err() != nil {
-				return nil
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			protoResponse, err := stream.Recv()
+			if err != nil {
+				if ctx.Err() != nil {
+					return nil
+				}
+				return fmt.Errorf("PriceRepository-Subscribe: error:%w", err)
 			}
-			return fmt.Errorf("PriceRepository-Subscribe: error:%w", err)
-		}
-		for _, protoShare := range protoResponse.Shares {
-			recievedShares := model.Share{
-				Company: protoShare.Company,
-				Price:   decimal.NewFromFloat(protoShare.Price),
+			for _, protoShare := range protoResponse.Shares {
+				sharePrice := decimal.NewFromFloat(protoShare.Price)
+				lastPrice, exists := lastShares[protoShare.Company]
+				if !exists || !sharePrice.Equal(lastPrice) {
+					recievedShares := model.Share{
+						Company: protoShare.Company,
+						Price:   sharePrice,
+					}
+					manager <- recievedShares
+					lastShares[protoShare.Company] = sharePrice
+				}
 			}
-			manager <- recievedShares
 		}
 	}
 }

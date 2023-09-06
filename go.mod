@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/artnikel/BalanceService v0.0.0-20230811103249-6b708502953c
-	github.com/artnikel/PriceService v0.0.0-20230823115809-6634c751d0eb
+	github.com/artnikel/PriceService v0.0.0-20230824145925-de11bf15baaf
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.9
