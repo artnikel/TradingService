@@ -67,7 +67,7 @@ func (ts *TradingService) identifyStrategy(takeProfit, stopLoss decimal.Decimal)
 	if stopLoss.Cmp(takeProfit) == 1 {
 		return short, nil
 	}
-	return "", fmt.Errorf("TradingService-identifyStrategy: stoploss = takeprofit")
+	return "", fmt.Errorf("stoploss = takeprofit")
 }
 
 // WaitForNotification listens changes of positions database
@@ -82,7 +82,7 @@ func (ts *TradingService) WaitForNotification(ctx context.Context, l *pq.Listene
 			err := json.Unmarshal([]byte(notification.Extra), &valueToParse)
 			logrus.Info(notification)
 			if err != nil {
-				logrus.WithField("Payloads", notification.Extra).Errorf("TradingService-WaitForNotification: %v", err)
+				logrus.WithField("Payloads", notification.Extra).Errorf("unmarshal %v", err)
 				continue
 			}
 			if valueToParse.Action == "INSERT" {
@@ -117,31 +117,31 @@ func (ts *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) 
 	ts.manager.Mu.Unlock()
 	balanceMoney, err := ts.bRep.GetBalance(ctx, deal.ProfileID)
 	if err != nil {
-		return fmt.Errorf("TradingService-CreatePosition-GetBalance: error:%w", err)
+		return fmt.Errorf("getBalance %w", err)
 	}
 	balance := &model.Balance{ProfileID: deal.ProfileID}
 	stopLoss, takeProfit := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
 	strategy, err := ts.identifyStrategy(deal.TakeProfit, deal.StopLoss)
 	if err != nil {
-		return fmt.Errorf("TradingService-CreatePosition-identifyStrategy: err:%w", err)
+		return fmt.Errorf("identifyStrategy %w", err)
 	}
 	if strategy == short {
 		stopLoss, takeProfit = takeProfit, stopLoss
 	}
 	if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
-		return fmt.Errorf("TradingService-CreatePosition: purchase price out of takeprofit/stoploss")
+		return fmt.Errorf("purchase price out of takeprofit/stoploss")
 	}
 	if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
-		return fmt.Errorf("TradingService-CreatePosition: not enough money")
+		return fmt.Errorf("not enough money")
 	}
 	balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
 	_, err = ts.bRep.BalanceOperation(ctx, balance)
 	if err != nil {
-		return fmt.Errorf("TradingService-CreatePosition-BalanceOperation: error:%w", err)
+		return fmt.Errorf("balanceOperation %w", err)
 	}
 	err = ts.priceRep.CreatePosition(ctx, deal)
 	if err != nil {
-		return fmt.Errorf("TradingService-CreatePosition: error:%w", err)
+		return fmt.Errorf("createPosition %w", err)
 	}
 	return nil
 }
@@ -151,16 +151,16 @@ func (ts *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) 
 func (ts *TradingService) getProfit(ctx context.Context, deal model.Deal) {
 	ts.manager.Mu.RLock()
 	if _, ok := ts.manager.Positions[deal.ProfileID]; !ok {
-		logrus.Errorf("TradingService-getProfit: value in map Positions with key profileid: %s is not exist", deal.ProfileID.String())
+		logrus.Errorf("value in map Positions with key profileid: %s is not exist", deal.ProfileID.String())
 	}
 	if _, ok := ts.manager.Positions[deal.ProfileID][deal.DealID]; !ok {
-		logrus.Errorf("TradingService-getProfit: value in map Positions with key dealID: %s is not exist", deal.DealID.String())
+		logrus.Errorf("value in map Positions with key dealID: %s is not exist", deal.DealID.String())
 	}
 	ts.manager.Mu.RUnlock()
 	stopLoss, takeProfit := deal.StopLoss.Mul(deal.SharesCount), deal.TakeProfit.Mul(deal.SharesCount)
 	strategy, err := ts.identifyStrategy(deal.TakeProfit, deal.StopLoss)
 	if err != nil {
-		logrus.Errorf("TradingService-getProfit-identifyStrategy: err:%v", err)
+		logrus.Errorf("identifyStrategy %v", err)
 	}
 	if strategy == short {
 		stopLoss, takeProfit = takeProfit, stopLoss
@@ -188,7 +188,7 @@ func (ts *TradingService) getProfit(ctx context.Context, deal model.Deal) {
 			if stopLoss.GreaterThanOrEqual(share.Mul(deal.SharesCount)) || share.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
 				profit, err := ts.closePosition(ctx, deal.DealID, deal.ProfileID, share)
 				if err != nil {
-					logrus.Errorf("TradingService-getProfit-closePosition: error:%v", err)
+					logrus.Errorf("closePosition %v", err)
 				}
 				fmt.Println("Position closed with profit: ", profit)
 				return
@@ -203,10 +203,10 @@ func (ts *TradingService) closePosition(ctx context.Context, dealid, profileid u
 	balance.ProfileID = profileid
 	ts.manager.Mu.RLock()
 	if _, ok := ts.manager.Positions[profileid]; !ok {
-		return decimal.Zero, fmt.Errorf("TradingService-closePosition: key of map Positions: %s is not exist", profileid.String())
+		return decimal.Zero, fmt.Errorf("key of map Positions: %s is not exist", profileid.String())
 	}
 	if _, ok := ts.manager.Positions[profileid][dealid]; !ok {
-		return decimal.Zero, fmt.Errorf("TradingService-closePosition: value in map Positions with key dealid: %s is not exist", dealid.String())
+		return decimal.Zero, fmt.Errorf("value in map Positions with key dealid: %s is not exist", dealid.String())
 	}
 	deal := ts.manager.Positions[profileid][dealid]
 	ts.manager.Mu.RUnlock()
@@ -220,12 +220,12 @@ func (ts *TradingService) closePosition(ctx context.Context, dealid, profileid u
 	}
 	err := ts.priceRep.ClosePosition(ctx, &deal)
 	if err != nil {
-		return decimal.Zero, fmt.Errorf("TradingService-ClosePosition: error:%w", err)
+		return decimal.Zero, fmt.Errorf("closePosition %w", err)
 	}
 	balance.Operation = deal.Profit.Add(deal.PurchasePrice.Mul(deal.SharesCount))
 	_, err = ts.bRep.BalanceOperation(ctx, &balance)
 	if err != nil {
-		return decimal.Zero, fmt.Errorf("TradingService-closePosition-BalanceOperation: error:%w", err)
+		return decimal.Zero, fmt.Errorf("balanceOperation %w", err)
 	}
 	return deal.Profit, nil
 }
@@ -245,7 +245,7 @@ func (ts *TradingService) ClosePositionManually(ctx context.Context, dealid, pro
 			ts.manager.Mu.RUnlock()
 			profit, err := ts.closePosition(ctx, dealid, profileid, share)
 			if err != nil {
-				return decimal.Zero, fmt.Errorf("TradingService-ClosePositionManually-closePosition: error: %w", err)
+				return decimal.Zero, fmt.Errorf("closePosition %w", err)
 			}
 			return profit, nil
 		}
@@ -259,7 +259,7 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 	go func() {
 		err := ts.priceRep.Subscribe(ctx, submanager)
 		if err != nil {
-			logrus.Errorf("TradingService-Subscribe: error:%v", err)
+			logrus.Errorf("subscribe %v", err)
 		}
 	}()
 	for {
@@ -293,7 +293,7 @@ func (ts *TradingService) GetPrices() ([]model.Share, error) {
 func (ts *TradingService) GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
 	unclosedDeals, err := ts.priceRep.GetUnclosedPositions(ctx, profileid)
 	if err != nil {
-		return nil, fmt.Errorf("TradingService-GetUnclosedPositions: error:%w", err)
+		return nil, fmt.Errorf("getUnclosedPositions %w", err)
 	}
 	return unclosedDeals, nil
 }
@@ -302,7 +302,7 @@ func (ts *TradingService) GetUnclosedPositions(ctx context.Context, profileid uu
 func (ts *TradingService) BackupUnclosedPositions(ctx context.Context) {
 	unclosedDeals, err := ts.priceRep.GetUnclosedPositionsForAll(ctx)
 	if err != nil {
-		logrus.Errorf("TradingService-BackupUnclosedPositions-GetUnclosedPositionsForAll: error:%v", err)
+		logrus.Errorf("getUnclosedPositionsForAll %v", err)
 	}
 	for _, deal := range unclosedDeals {
 		ts.manager.Mu.Lock()
@@ -317,7 +317,7 @@ func (ts *TradingService) BackupUnclosedPositions(ctx context.Context) {
 func (ts *TradingService) BalanceOperation(ctx context.Context, balance *model.Balance) (float64, error) {
 	operation, err := ts.bRep.BalanceOperation(ctx, balance)
 	if err != nil {
-		return 0, fmt.Errorf("TradingService-BalanceOperation: error: %w", err)
+		return 0, fmt.Errorf("balanceOperation %w", err)
 	}
 	return operation, nil
 }
@@ -326,7 +326,7 @@ func (ts *TradingService) BalanceOperation(ctx context.Context, balance *model.B
 func (ts *TradingService) GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error) {
 	money, err := ts.bRep.GetBalance(ctx, profileid)
 	if err != nil {
-		return 0, fmt.Errorf("TradingService-GetBalance: error: %w", err)
+		return 0, fmt.Errorf("getBalance %w", err)
 	}
 	return money, nil
 }

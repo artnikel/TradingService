@@ -39,7 +39,7 @@ func (p *PriceRepository) Subscribe(ctx context.Context, manager chan model.Shar
 		SelectedShares: companyShares,
 	})
 	if err != nil {
-		return fmt.Errorf("PriceRepository-Subscribe: error:%w", err)
+		return fmt.Errorf("subscribe %w", err)
 	}
 	for {
 		select {
@@ -51,7 +51,7 @@ func (p *PriceRepository) Subscribe(ctx context.Context, manager chan model.Shar
 				if ctx.Err() != nil {
 					return nil
 				}
-				return fmt.Errorf("PriceRepository-Subscribe: error:%w", err)
+				return fmt.Errorf("stream.Recv %w", err)
 			}
 			for _, protoShare := range protoResponse.Shares {
 				sharePrice := decimal.NewFromFloat(protoShare.Price)
@@ -80,7 +80,7 @@ func (p *PriceRepository) CreatePosition(ctx context.Context, deal *model.Deal) 
 		deal.DealID, deal.ProfileID, deal.Company, deal.PurchasePrice.InexactFloat64(), deal.SharesCount.InexactFloat64(),
 		deal.TakeProfit.InexactFloat64(), deal.StopLoss.InexactFloat64(), deal.DealTime)
 	if err != nil {
-		return fmt.Errorf("PriceRepository-BalanceOperation: error in method p.pool.Exec(): %w", err)
+		return fmt.Errorf("exec %w", err)
 	}
 	return nil
 }
@@ -90,7 +90,7 @@ func (p *PriceRepository) ClosePosition(ctx context.Context, deal *model.Deal) e
 	_, err := p.pool.Exec(ctx, "UPDATE deal SET profit = $1, enddealtime = $2 WHERE dealid = $3",
 		deal.Profit.InexactFloat64(), deal.EndDealTime, deal.DealID)
 	if err != nil {
-		return fmt.Errorf("PriceRepository-BalanceOperation: error in method p.pool.Exec(): %w", err)
+		return fmt.Errorf("exec %w", err)
 	}
 	return nil
 }
@@ -101,19 +101,19 @@ func (p *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid uu
 	rows, err := p.pool.Query(ctx, `SELECT dealid, company, purchaseprice, sharescount, takeprofit, stoploss, dealtime
 	FROM deal WHERE profileid = $1 AND enddealtime IS NULL`, profileid)
 	if err != nil {
-		return nil, fmt.Errorf("PriceRepository-GetUnclosedPositions: error in method p.pool.Query(): %w", err)
+		return nil, fmt.Errorf("query %w", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var deal model.Deal
 		err := rows.Scan(&deal.DealID, &deal.Company, &deal.PurchasePrice, &deal.SharesCount, &deal.TakeProfit, &deal.StopLoss, &deal.DealTime)
 		if err != nil {
-			return nil, fmt.Errorf("PriceRepository-GetUnclosedPositions error in method rows.Scan(): %w", err)
+			return nil, fmt.Errorf("scan %w", err)
 		}
 		deals = append(deals, &deal)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("PriceRepository-GetUnclosedPositions error iterating rows: %w", err)
+		return nil, fmt.Errorf("rows.Err %w", err)
 	}
 	return deals, nil
 }
@@ -124,19 +124,19 @@ func (p *PriceRepository) GetUnclosedPositionsForAll(ctx context.Context) ([]*mo
 	rows, err := p.pool.Query(ctx, `SELECT dealid, profileid, company, purchaseprice, sharescount, takeprofit, stoploss, dealtime
 	FROM deal WHERE enddealtime IS NULL`)
 	if err != nil {
-		return nil, fmt.Errorf("PriceRepository-GetUnclosedPositionsForAll: error in method p.pool.Query(): %w", err)
+		return nil, fmt.Errorf("query %w", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var deal model.Deal
 		err := rows.Scan(&deal.DealID, &deal.ProfileID, &deal.Company, &deal.PurchasePrice, &deal.SharesCount, &deal.TakeProfit, &deal.StopLoss, &deal.DealTime)
 		if err != nil {
-			return nil, fmt.Errorf("PriceRepository-GetUnclosedPositionsForAll error in method rows.Scan(): %w", err)
+			return nil, fmt.Errorf("scan %w", err)
 		}
 		deals = append(deals, &deal)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("PriceRepository-GetUnclosedPositionsForAll error iterating rows: %w", err)
+		return nil, fmt.Errorf("rows.Err %w", err)
 	}
 	return deals, nil
 }

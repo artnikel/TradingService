@@ -6,6 +6,8 @@ github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 h1:TngWCqHvy9oXAN6lEV
 github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5/go.mod h1:lmUJ/7eu/Q8D7ML55dXQrVaamCz2vxCfdQBasLZfHKk=
 github.com/artnikel/BalanceService v0.0.0-20230811103249-6b708502953c h1:okLqsHnvZJvN4qrmqq6f1gNuOkaLNI+3i2HDpU4OV8w=
 github.com/artnikel/BalanceService v0.0.0-20230811103249-6b708502953c/go.mod h1:WpmIlQHJY5Ertr0LEJ9ZXcZeryEQvUuGNxIDAPmTR48=
+github.com/artnikel/BalanceService v0.0.0-20230904135632-6d46f2783911 h1:cKv/z7CYDolLVst+LAwvQX4aYuH9rtgk2Oe198cS7oA=
+github.com/artnikel/BalanceService v0.0.0-20230904135632-6d46f2783911/go.mod h1:WpmIlQHJY5Ertr0LEJ9ZXcZeryEQvUuGNxIDAPmTR48=
 github.com/artnikel/PriceService v0.0.0-20230824145925-de11bf15baaf h1:YfXNitCoLXHRUroZ+O3DK7r24H0vxvVHS211YIPswSI=
 github.com/artnikel/PriceService v0.0.0-20230824145925-de11bf15baaf/go.mod h1:vrflT3oTsBDf5mXrY03yYQuRRABW60Vz28/BkEWfPmQ=
 github.com/caarlos0/env v3.5.0+incompatible h1:Yy0UN8o9Wtr/jGHZDpCBLpNrzcFLLM2yixi/rBrKyJs=
