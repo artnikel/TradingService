@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS deal (
+CREATE TABLE deal (
 	dealid uuid,
 	profileid uuid,
 	company varchar,
