@@ -146,13 +146,13 @@ func (d *EntityDeal) GetClosedPositions(ctx context.Context, req *proto.GetClose
 		logrus.Errorf("error: %v", err)
 		return &proto.GetClosedPositionsResponse{}, fmt.Errorf("varCtx %w", err)
 	}
-	unclosedDeals, err := d.srvTrading.GetUnclosedPositions(ctx, profileID)
+	closedDeals, err := d.srvTrading.GetClosedPositions(ctx, profileID)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return &proto.GetClosedPositionsResponse{}, fmt.Errorf("getClosedPositions %w", err)
 	}
-	protoDeals := make([]*proto.Deal, len(unclosedDeals))
-	for i, deal := range unclosedDeals {
+	protoDeals := make([]*proto.Deal, len(closedDeals))
+	for i, deal := range closedDeals {
 		protoDeal := &proto.Deal{
 			DealID:        deal.DealID.String(),
 			SharesCount:   deal.SharesCount.InexactFloat64(),
