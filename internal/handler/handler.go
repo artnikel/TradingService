@@ -22,6 +22,7 @@ type TradingService interface {
 	GetBalance(ctx context.Context, profileid uuid.UUID) (float64, error)
 	ClosePositionManually(ctx context.Context, dealid uuid.UUID, profileid uuid.UUID) (decimal.Decimal, error)
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
+	GetClosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
 	GetPrices() ([]model.Share, error)
 }
 
@@ -129,6 +130,43 @@ func (d *EntityDeal) GetUnclosedPositions(ctx context.Context, req *proto.GetUnc
 		protoDeals[i] = protoDeal
 	}
 	return &proto.GetUnclosedPositionsResponse{
+		Deal: protoDeals,
+	}, nil
+}
+
+// GetClosedPositions is method that calls method of Trading Service
+func (d *EntityDeal) GetClosedPositions(ctx context.Context, req *proto.GetClosedPositionsRequest) (*proto.GetClosedPositionsResponse, error) {
+	profileID, err := uuid.Parse(req.Profileid)
+	if err != nil {
+		logrus.Errorf("error: %v", err)
+		return &proto.GetClosedPositionsResponse{}, fmt.Errorf("parse %w", err)
+	}
+	err = d.validate.VarCtx(ctx, profileID, "required")
+	if err != nil {
+		logrus.Errorf("error: %v", err)
+		return &proto.GetClosedPositionsResponse{}, fmt.Errorf("varCtx %w", err)
+	}
+	unclosedDeals, err := d.srvTrading.GetUnclosedPositions(ctx, profileID)
+	if err != nil {
+		logrus.Errorf("error: %v", err)
+		return &proto.GetClosedPositionsResponse{}, fmt.Errorf("getClosedPositions %w", err)
+	}
+	protoDeals := make([]*proto.Deal, len(unclosedDeals))
+	for i, deal := range unclosedDeals {
+		protoDeal := &proto.Deal{
+			DealID:        deal.DealID.String(),
+			SharesCount:   deal.SharesCount.InexactFloat64(),
+			Company:       deal.Company,
+			PurchasePrice: deal.PurchasePrice.InexactFloat64(),
+			StopLoss:      deal.StopLoss.InexactFloat64(),
+			TakeProfit:    deal.TakeProfit.InexactFloat64(),
+			DealTime:      timestamppb.New(deal.DealTime),
+			Profit:        deal.Profit.InexactFloat64(),
+			EndDealTime:   timestamppb.New(deal.EndDealTime),
+		}
+		protoDeals[i] = protoDeal
+	}
+	return &proto.GetClosedPositionsResponse{
 		Deal: protoDeals,
 	}, nil
 }

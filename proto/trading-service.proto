@@ -26,6 +26,7 @@ service TradingService {
     rpc CreatePosition(CreatePositionRequest) returns (CreatePositionResponse);
     rpc ClosePositionManually(ClosePositionManuallyRequest) returns (ClosePositionManuallyResponse);
     rpc GetUnclosedPositions(GetUnclosedPositionsRequest) returns (GetUnclosedPositionsResponse);
+    rpc GetClosedPositions(GetClosedPositionsRequest) returns (GetClosedPositionsResponse);
     rpc GetPrices(GetPricesRequest) returns (GetPricesResponse);
 }
 
@@ -49,6 +50,14 @@ message GetUnclosedPositionsRequest{
 }
 
 message GetUnclosedPositionsResponse{
+    repeated Deal deal = 1;
+}
+
+message GetClosedPositionsRequest{
+    string profileid = 1;
+}
+
+message GetClosedPositionsResponse{
     repeated Deal deal = 1;
 }
 

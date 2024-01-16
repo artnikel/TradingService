@@ -23,6 +23,7 @@ type PriceRepository interface {
 	CreatePosition(ctx context.Context, deal *model.Deal) error
 	ClosePosition(ctx context.Context, deal *model.Deal) error
 	GetUnclosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
+	GetClosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error)
 	GetUnclosedPositionsForAll(ctx context.Context) ([]*model.Deal, error)
 }
 
@@ -296,6 +297,15 @@ func (ts *TradingService) GetUnclosedPositions(ctx context.Context, profileid uu
 		return nil, fmt.Errorf("getUnclosedPositions %w", err)
 	}
 	return unclosedDeals, nil
+}
+
+// GetClosedPositions is a method of TradingService calls method of Repository
+func (ts *TradingService) GetClosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
+	closedDeals, err := ts.priceRep.GetClosedPositions(ctx, profileid)
+	if err != nil {
+		return nil, fmt.Errorf("getClosedPositions %w", err)
+	}
+	return closedDeals, nil
 }
 
 // BackupUnclosedPositions is a method of TradingService calls method of Repository

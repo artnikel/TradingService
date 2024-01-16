@@ -118,6 +118,31 @@ func (p *PriceRepository) GetUnclosedPositions(ctx context.Context, profileid uu
 	return deals, nil
 }
 
+// GetClosedPositions returns info about positions which closed
+func (p *PriceRepository) GetClosedPositions(ctx context.Context, profileid uuid.UUID) ([]*model.Deal, error) {
+	var deals []*model.Deal
+	rows, err := p.pool.Query(ctx, `SELECT dealid, company, purchaseprice, sharescount,
+	 takeprofit, stoploss, dealtime, profit, enddealtime
+		FROM deal WHERE profileid = $1 AND enddealtime IS NOT NULL`, profileid)
+	if err != nil {
+		return nil, fmt.Errorf("query %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var deal model.Deal
+		err := rows.Scan(&deal.DealID, &deal.Company, &deal.PurchasePrice, &deal.SharesCount, &deal.TakeProfit,
+			&deal.StopLoss, &deal.DealTime, &deal.Profit, &deal.EndDealTime)
+		if err != nil {
+			return nil, fmt.Errorf("scan %w", err)
+		}
+		deals = append(deals, &deal)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows.Err %w", err)
+	}
+	return deals, nil
+}
+
 // GetUnclosedPositionsForAll returns info about positions which not closed
 func (p *PriceRepository) GetUnclosedPositionsForAll(ctx context.Context) ([]*model.Deal, error) {
 	var deals []*model.Deal
