@@ -38,30 +38,30 @@ func connectPostgres(connString string) (*pgxpool.Pool, error) {
 func main() {
 	pconn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Could not connect: %v", err)
+		log.Fatalf("could not connect: %v", err)
 	}
 	bconn, err := grpc.Dial("localhost:8095", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Could not connect: %v", err)
+		log.Fatalf("could not connect: %v", err)
 	}
 	defer func() {
 		errConnClose := pconn.Close()
 		if err != nil {
-			log.Fatalf("Could not close connection: %v", errConnClose)
+			log.Fatalf("could not close connection: %v", errConnClose)
 		}
 		errConnClose = bconn.Close()
 		if err != nil {
-			log.Fatalf("Could not close connection: %v", errConnClose)
+			log.Fatalf("could not close connection: %v", errConnClose)
 		}
 	}()
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatalf("Could not parse config: err: %v", err)
+		log.Fatalf("could not parse config: err: %v", err)
 	}
 	v := validator.New()
 	dbpool, errPool := connectPostgres(cfg.PostgresConnTrading)
 	if errPool != nil {
-		log.Fatalf("Could not construct the pool: err: %v", errPool)
+		log.Fatalf("could not construct the pool: err: %v", errPool)
 	}
 	defer dbpool.Close()
 	pclient := pproto.NewPriceServiceClient(pconn)
@@ -81,21 +81,21 @@ func main() {
 	listener := pq.NewListener(cfg.PostgresConnTrading+"?sslmode=disable", 10*time.Second, time.Minute, reportProblem)
 	err = listener.Listen("events")
 	if err != nil {
-		log.Fatalf("Failed to listen events: %v", err)
+		log.Fatalf("failed to listen events: %v", err)
 	}
-	fmt.Println("Start monitoring Positions...")
+	fmt.Println("Trading Service started")
 
 	go tsrv.WaitForNotification(ctx, listener)
 
 	hndl := handler.NewEntityDeal(tsrv, v)
 	lis, err := net.Listen("tcp", "localhost:8088")
 	if err != nil {
-		log.Fatalf("Cannot create listener: %v", err)
+		log.Fatalf("cannot create listener: %v", err)
 	}
 	grpcServer := grpc.NewServer()
 	proto.RegisterTradingServiceServer(grpcServer, hndl)
 	err = grpcServer.Serve(lis)
 	if err != nil {
-		log.Fatalf("Failed to serve listener: %v", err)
+		log.Fatalf("failed to serve listener: %v", err)
 	}
 }

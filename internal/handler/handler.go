@@ -3,6 +3,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	berrors "github.com/artnikel/TradingService/internal/errors"
 )
 
 // TradingService is an interface that contains methods of service for trade
@@ -61,6 +63,10 @@ func (d *EntityDeal) CreatePosition(ctx context.Context, req *proto.CreatePositi
 	}
 	err = d.srvTrading.CreatePosition(ctx, createdDeal)
 	if err != nil {
+		var e *berrors.BusinessError
+		if errors.As(err, &e) {
+			return &proto.CreatePositionResponse{}, err
+		}
 		logrus.Errorf("error: %v", err)
 		return &proto.CreatePositionResponse{}, fmt.Errorf("createPosition %w", err)
 	}

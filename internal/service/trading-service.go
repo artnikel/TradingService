@@ -15,6 +15,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	berrors "github.com/artnikel/TradingService/internal/errors"
 )
 
 // PriceRepository is interface with method for reading prices
@@ -130,10 +131,10 @@ func (ts *TradingService) CreatePosition(ctx context.Context, deal *model.Deal) 
 		stopLoss, takeProfit = takeProfit, stopLoss
 	}
 	if stopLoss.Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == 1 || deal.PurchasePrice.Mul(deal.SharesCount).Cmp(takeProfit) == 1 {
-		return fmt.Errorf("purchase price out of takeprofit/stoploss")
+		return berrors.New(berrors.PurchasePriceOut)
 	}
 	if decimal.NewFromFloat(balanceMoney).Cmp(deal.PurchasePrice.Mul(deal.SharesCount)) == -1 {
-		return fmt.Errorf("not enough money")
+		return berrors.New(berrors.NotEnoughMoney)
 	}
 	balance.Operation = deal.PurchasePrice.Mul(deal.SharesCount).Neg()
 	_, err = ts.bRep.BalanceOperation(ctx, balance)
@@ -178,14 +179,14 @@ func (ts *TradingService) getProfit(ctx context.Context, deal model.Deal) {
 				continue
 			}
 			ts.manager.Mu.RUnlock()
-			if strategy == long {
-				fmt.Println("(Long) Deal ID: ", deal.DealID, " Profit :", share.Mul(deal.SharesCount).
-					Sub(deal.PurchasePrice.Mul(deal.SharesCount)))
-			}
-			if strategy == short {
-				fmt.Println("(Short) Deal ID: ", deal.DealID, " Profit :", deal.PurchasePrice.Mul(deal.SharesCount).
-					Sub(share.Mul(deal.SharesCount)))
-			}
+			// if strategy == long {
+			// 	fmt.Println("(Long) Deal ID: ", deal.DealID, " Profit :", share.Mul(deal.SharesCount).
+			// 		Sub(deal.PurchasePrice.Mul(deal.SharesCount)))
+			// }
+			// if strategy == short {
+			// 	fmt.Println("(Short) Deal ID: ", deal.DealID, " Profit :", deal.PurchasePrice.Mul(deal.SharesCount).
+			// 		Sub(share.Mul(deal.SharesCount)))
+			// }
 			if stopLoss.GreaterThanOrEqual(share.Mul(deal.SharesCount)) || share.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
 				profit, err := ts.closePosition(ctx, deal.DealID, deal.ProfileID, share)
 				if err != nil {
