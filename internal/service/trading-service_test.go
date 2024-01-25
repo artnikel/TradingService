@@ -363,6 +363,18 @@ func TestGetPrices(t *testing.T) {
 	trep.AssertExpectations(t)
 }
 
+func TestGetClosedPositions(t *testing.T) {
+	trep := new(mocks.PriceRepository)
+	srv := NewTradingService(trep, nil, *cfg)
+	var sliceDeals []*model.Deal
+	sliceDeals = append(sliceDeals, testDeal)
+	trep.On("GetClosedPositions", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(sliceDeals, nil).Once()
+	closedDeals, err := srv.GetClosedPositions(context.Background(), testBalance.ProfileID)
+	require.NoError(t, err)
+	require.Equal(t, len(closedDeals), len(sliceDeals))
+	trep.AssertExpectations(t)
+}
+
 func TestGetUnclosedPositions(t *testing.T) {
 	trep := new(mocks.PriceRepository)
 	srv := NewTradingService(trep, nil, *cfg)

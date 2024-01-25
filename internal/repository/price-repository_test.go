@@ -167,6 +167,22 @@ func TestClosePosition(t *testing.T) {
 	require.Equal(t, len(unclosedDeals), 0)
 }
 
+func TestGetClosedPositions(t *testing.T) {
+	testDeal.DealID = uuid.New()
+	err := pg.CreatePosition(context.Background(), testDeal)
+	require.NoError(t, err)
+	closedDeals, err := pg.GetClosedPositions(context.Background(), testDeal.ProfileID)
+	require.NoError(t, err)
+	countClosedBefore := len(closedDeals)
+	closeDeal.DealID = testDeal.DealID
+	err = pg.ClosePosition(context.Background(), closeDeal)
+	require.NoError(t, err)
+	closedDeals, err = pg.GetClosedPositions(context.Background(), testDeal.ProfileID)
+	require.NoError(t, err)
+	countClosedAfter := len(closedDeals)
+	require.Equal(t, countClosedAfter-countClosedBefore, 1)
+}
+
 func TestGetUnclosedPositions(t *testing.T) {
 	testDeal.DealID = uuid.New()
 	err := pg.CreatePosition(context.Background(), testDeal)

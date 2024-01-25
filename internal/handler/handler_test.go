@@ -65,6 +65,19 @@ func TestClosePositionManually(t *testing.T) {
 	srv.AssertExpectations(t)
 }
 
+func TestGetClosedPositions(t *testing.T) {
+	srv := new(mocks.TradingService)
+	hndl := NewEntityDeal(srv, v)
+	var sliceDeals []*model.Deal
+	sliceDeals = append(sliceDeals, testDeal)
+	srv.On("GetClosedPositions", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(sliceDeals, nil)
+	_, err := hndl.GetClosedPositions(context.Background(), &proto.GetClosedPositionsRequest{
+		Profileid: testDeal.ProfileID.String(),
+	})
+	require.NoError(t, err)
+	srv.AssertExpectations(t)
+}
+
 func TestGetUnclosedPositions(t *testing.T) {
 	srv := new(mocks.TradingService)
 	hndl := NewEntityDeal(srv, v)

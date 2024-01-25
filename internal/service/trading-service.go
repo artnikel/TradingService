@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/artnikel/TradingService/internal/config"
+	berrors "github.com/artnikel/TradingService/internal/errors"
 	"github.com/artnikel/TradingService/internal/model"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	berrors "github.com/artnikel/TradingService/internal/errors"
 )
 
 // PriceRepository is interface with method for reading prices

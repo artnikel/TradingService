@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	berrors "github.com/artnikel/TradingService/internal/errors"
 	"github.com/artnikel/TradingService/internal/model"
 	"github.com/artnikel/TradingService/proto"
 	"github.com/go-playground/validator/v10"
@@ -14,7 +15,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	berrors "github.com/artnikel/TradingService/internal/errors"
 )
 
 // TradingService is an interface that contains methods of service for trade
