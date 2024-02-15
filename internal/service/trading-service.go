@@ -265,12 +265,15 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 		}
 	}()
 	for {
-		ts.manager.Mu.Lock()
-		for i := 0; i < cap(submanager); i++ {
-			share := <-submanager
+		select
+		{
+		case <-ctx.Done():
+			return
+		case share := <-submanager:
+			ts.manager.Mu.Lock()
 			ts.manager.PricesMap[share.Company] = share.Price
+			ts.manager.Mu.Unlock()
 		}
-		ts.manager.Mu.Unlock()
 	}
 }
 
@@ -278,8 +281,8 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 func (ts *TradingService) GetPrices() ([]model.Share, error) {
 	var shares []model.Share
 	companyShares := strings.Split(ts.cfg.CompanyShares, ",")
-	ts.manager.Mu.Lock()
-	defer ts.manager.Mu.Unlock()
+	ts.manager.Mu.RLock()
+	defer ts.manager.Mu.RUnlock()
 	for _, company := range companyShares {
 		if price, exists := ts.manager.PricesMap[company]; exists {
 			shares = append(shares, model.Share{
