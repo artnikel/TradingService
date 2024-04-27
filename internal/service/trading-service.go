@@ -43,7 +43,7 @@ type TradingService struct {
 }
 
 // NewTradingService accepts PriceRepository object and returnes an object of type *PriceService
-func NewTradingService(priceRep PriceRepository, bRep BalanceRepository, cfg config.Variables) *TradingService {
+func NewTradingService(priceRep PriceRepository, bRep BalanceRepository, cfg *config.Variables) *TradingService {
 	return &TradingService{
 		priceRep: priceRep,
 		bRep:     bRep,
@@ -51,7 +51,7 @@ func NewTradingService(priceRep PriceRepository, bRep BalanceRepository, cfg con
 			PricesMap: make(map[string]decimal.Decimal),
 			Positions: make(map[uuid.UUID]map[uuid.UUID]model.Deal),
 			Mu:        sync.RWMutex{}},
-		cfg: cfg,
+		cfg: *cfg,
 	}
 }
 
@@ -179,20 +179,11 @@ func (ts *TradingService) getProfit(ctx context.Context, deal model.Deal) {
 				continue
 			}
 			ts.manager.Mu.RUnlock()
-			// if strategy == long {
-			// 	fmt.Println("(Long) Deal ID: ", deal.DealID, " Profit :", share.Mul(deal.SharesCount).
-			// 		Sub(deal.PurchasePrice.Mul(deal.SharesCount)))
-			// }
-			// if strategy == short {
-			// 	fmt.Println("(Short) Deal ID: ", deal.DealID, " Profit :", deal.PurchasePrice.Mul(deal.SharesCount).
-			// 		Sub(share.Mul(deal.SharesCount)))
-			// }
 			if stopLoss.GreaterThanOrEqual(share.Mul(deal.SharesCount)) || share.Mul(deal.SharesCount).GreaterThanOrEqual(takeProfit) {
-				profit, err := ts.closePosition(ctx, deal.DealID, deal.ProfileID, share)
+				_, err := ts.closePosition(ctx, deal.DealID, deal.ProfileID, share)
 				if err != nil {
 					logrus.Errorf("closePosition %v", err)
 				}
-				fmt.Println("Position closed with profit: ", profit)
 				return
 			}
 		}
@@ -265,8 +256,7 @@ func (ts *TradingService) Subscribe(ctx context.Context) {
 		}
 	}()
 	for {
-		select
-		{
+		select {
 		case <-ctx.Done():
 			return
 		case share := <-submanager:

@@ -89,7 +89,7 @@ func TestMain(m *testing.M) {
 		cleanupPostgres()
 		os.Exit(1)
 	}
-	pg = NewPriceRepository(nil, dbpool, cfg)
+	pg = NewPriceRepository(nil, dbpool, &cfg)
 	exitVal := m.Run()
 	cleanupPostgres()
 	os.Exit(exitVal)
@@ -110,7 +110,7 @@ func TestSubscribe(t *testing.T) {
 	err := env.Parse(&cfg)
 	require.NoError(t, err)
 	lenOfReadableShares := len(strings.Split(cfg.CompanyShares, ","))
-	r := NewPriceRepository(mockClient, nil, cfg)
+	r := NewPriceRepository(mockClient, nil, &cfg)
 	subscribersShares := make(chan model.Share, lenOfReadableShares)
 	go r.Subscribe(ctx, subscribersShares)
 	select {

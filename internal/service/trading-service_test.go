@@ -69,7 +69,7 @@ func TestMain(m *testing.M) {
 
 func TestIdentifyStrategy(t *testing.T) {
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, nil, *cfg)
+	srv := NewTradingService(trep, nil, cfg)
 	strategy, err := srv.identifyStrategy(testDeal.TakeProfit, testDeal.StopLoss)
 	require.NoError(t, err)
 	require.Equal(t, strategy, long)
@@ -78,7 +78,7 @@ func TestIdentifyStrategy(t *testing.T) {
 
 func TestWaitForNotification(t *testing.T) {
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, nil, *cfg)
+	srv := NewTradingService(trep, nil, cfg)
 	l := &pq.Listener{
 		Notify: make(chan *pq.Notification, 1),
 	}
@@ -109,7 +109,7 @@ func TestWaitForNotification(t *testing.T) {
 func TestCreatePosition(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, brep, *cfg)
+	srv := NewTradingService(trep, brep, cfg)
 	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
@@ -125,7 +125,7 @@ func TestCreatePosition(t *testing.T) {
 func TestCreateTwoPositions(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, brep, *cfg)
+	srv := NewTradingService(trep, brep, cfg)
 	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil)
 	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil)
 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil)
@@ -157,7 +157,7 @@ func TestCreateTwoPositions(t *testing.T) {
 func TestGetProfit(t *testing.T) {
 	trep := new(mocks.PriceRepository)
 	brep := new(mocks.BalanceRepository)
-	srv := NewTradingService(trep, brep, *cfg)
+	srv := NewTradingService(trep, brep, cfg)
 	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
@@ -183,7 +183,7 @@ func TestGetProfit(t *testing.T) {
 func TestGetProfitForTwoUsers(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, brep, *cfg)
+	srv := NewTradingService(trep, brep, cfg)
 	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil)
 	trep.On("CreatePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil)
 	brep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil)
@@ -238,7 +238,7 @@ func TestGetProfitForTwoUsers(t *testing.T) {
 func TestClosePosition(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, brep, *cfg)
+	srv := NewTradingService(trep, brep, cfg)
 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil).Once()
 	srv.manager.Mu.Lock()
@@ -256,7 +256,7 @@ func TestClosePosition(t *testing.T) {
 func TestCloseTwoPositions(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, brep, *cfg)
+	srv := NewTradingService(trep, brep, cfg)
 	brep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil)
 	trep.On("ClosePosition", mock.Anything, mock.AnythingOfType("*model.Deal")).Return(nil)
 	srv.manager.Mu.Lock()
@@ -291,7 +291,7 @@ func TestCloseTwoPositions(t *testing.T) {
 func TestClosePositionManually(t *testing.T) {
 	brep := new(mocks.BalanceRepository)
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, brep, *cfg)
+	srv := NewTradingService(trep, brep, cfg)
 	testBalanceForClose := &model.Balance{
 		BalanceID: uuid.New(),
 		ProfileID: uuid.New(),
@@ -328,7 +328,7 @@ func TestClosePositionManually(t *testing.T) {
 
 func TestSubscribe(t *testing.T) {
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, nil, *cfg)
+	srv := NewTradingService(trep, nil, cfg)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	submanager := make(chan model.Share, 1)
@@ -350,7 +350,7 @@ func TestSubscribe(t *testing.T) {
 
 func TestGetPrices(t *testing.T) {
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, nil, *cfg)
+	srv := NewTradingService(trep, nil, cfg)
 	srv.manager.Mu.Lock()
 	srv.manager.PricesMap[testDeal.Company] = testDeal.PurchasePrice
 	srv.manager.Mu.Unlock()
@@ -365,7 +365,7 @@ func TestGetPrices(t *testing.T) {
 
 func TestGetClosedPositions(t *testing.T) {
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, nil, *cfg)
+	srv := NewTradingService(trep, nil, cfg)
 	var sliceDeals []*model.Deal
 	sliceDeals = append(sliceDeals, testDeal)
 	trep.On("GetClosedPositions", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(sliceDeals, nil).Once()
@@ -377,7 +377,7 @@ func TestGetClosedPositions(t *testing.T) {
 
 func TestGetUnclosedPositions(t *testing.T) {
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, nil, *cfg)
+	srv := NewTradingService(trep, nil, cfg)
 	var sliceDeals []*model.Deal
 	sliceDeals = append(sliceDeals, testDeal)
 	trep.On("GetUnclosedPositions", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(sliceDeals, nil).Once()
@@ -389,7 +389,7 @@ func TestGetUnclosedPositions(t *testing.T) {
 
 func TestBackupUnclosedPositions(t *testing.T) {
 	trep := new(mocks.PriceRepository)
-	srv := NewTradingService(trep, nil, *cfg)
+	srv := NewTradingService(trep, nil, cfg)
 	var sliceDeals []*model.Deal
 	sliceDeals = append(sliceDeals, testDeal)
 	trep.On("GetUnclosedPositionsForAll", mock.Anything).Return(sliceDeals, nil).Once()
@@ -399,7 +399,7 @@ func TestBackupUnclosedPositions(t *testing.T) {
 
 func TestBalanceOperation(t *testing.T) {
 	rep := new(mocks.BalanceRepository)
-	srv := NewTradingService(nil, rep, *cfg)
+	srv := NewTradingService(nil, rep, cfg)
 	rep.On("BalanceOperation", mock.Anything, mock.AnythingOfType("*model.Balance")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	_, err := srv.BalanceOperation(context.Background(), testBalance)
 	require.NoError(t, err)
@@ -408,7 +408,7 @@ func TestBalanceOperation(t *testing.T) {
 
 func TestGetBalanceAndOperation(t *testing.T) {
 	rep := new(mocks.BalanceRepository)
-	srv := NewTradingService(nil, rep, *cfg)
+	srv := NewTradingService(nil, rep, cfg)
 	rep.On("GetBalance", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(testBalance.Operation.InexactFloat64(), nil).Once()
 	money, err := srv.GetBalance(context.Background(), testBalance.ProfileID)
 	require.NoError(t, err)

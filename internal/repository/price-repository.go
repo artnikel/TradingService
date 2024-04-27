@@ -22,11 +22,11 @@ type PriceRepository struct {
 }
 
 // NewPriceRepository creates and returns a new instance of PriceRepository, using the provided proto.PriceServiceClient.
-func NewPriceRepository(client pproto.PriceServiceClient, pool *pgxpool.Pool, cfg config.Variables) *PriceRepository {
+func NewPriceRepository(client pproto.PriceServiceClient, pool *pgxpool.Pool, cfg *config.Variables) *PriceRepository {
 	return &PriceRepository{
 		client: client,
 		pool:   pool,
-		cfg:    cfg,
+		cfg:    *cfg,
 	}
 }
 

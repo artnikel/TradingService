@@ -36,11 +36,15 @@ func connectPostgres(connString string) (*pgxpool.Pool, error) {
 
 // nolint gocritic
 func main() {
-	pconn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	cfg, err := config.New()
+	if err != nil {
+		log.Fatalf("could not parse config: err: %v", err)
+	}
+	pconn, err := grpc.Dial(cfg.ProfileAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("could not connect: %v", err)
 	}
-	bconn, err := grpc.Dial("localhost:8095", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	bconn, err := grpc.Dial(cfg.BalanceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("could not connect: %v", err)
 	}
@@ -54,10 +58,6 @@ func main() {
 			log.Fatalf("could not close connection: %v", errConnClose)
 		}
 	}()
-	cfg, err := config.New()
-	if err != nil {
-		log.Fatalf("could not parse config: err: %v", err)
-	}
 	v := validator.New()
 	dbpool, errPool := connectPostgres(cfg.PostgresConnTrading)
 	if errPool != nil {
@@ -66,9 +66,9 @@ func main() {
 	defer dbpool.Close()
 	pclient := pproto.NewPriceServiceClient(pconn)
 	bclient := bproto.NewBalanceServiceClient(bconn)
-	prep := repository.NewPriceRepository(pclient, dbpool, *cfg)
+	prep := repository.NewPriceRepository(pclient, dbpool, cfg)
 	brep := repository.NewBalanceRepository(bclient)
-	tsrv := service.NewTradingService(prep, brep, *cfg, )
+	tsrv := service.NewTradingService(prep, brep, cfg, )
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go tsrv.Subscribe(ctx)
@@ -88,7 +88,7 @@ func main() {
 	go tsrv.WaitForNotification(ctx, listener)
 
 	hndl := handler.NewEntityDeal(tsrv, v)
-	lis, err := net.Listen("tcp", "localhost:8088")
+	lis, err := net.Listen("tcp", cfg.TradingAddress)
 	if err != nil {
 		log.Fatalf("cannot create listener: %v", err)
 	}
