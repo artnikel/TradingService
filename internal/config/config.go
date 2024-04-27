@@ -8,7 +8,7 @@ type Variables struct {
 	PostgresConnTrading string `env:"POSTGRES_CONN_TRADING"`
 	CompanyShares       string `env:"COMPANY_SHARES"`
 	TradingAddress      string `env:"TRADING_ADDRESS"`
-	ProfileAddress      string `env:"PROFILE_ADDRESS"`
+	PriceAddress        string `env:"PRICE_ADDRESS"`
 	BalanceAddress      string `env:"BALANCE_ADDRESS"`
 }
 

@@ -40,7 +40,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not parse config: err: %v", err)
 	}
-	pconn, err := grpc.Dial(cfg.ProfileAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	pconn, err := grpc.Dial(cfg.PriceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("could not connect: %v", err)
 	}
